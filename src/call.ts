@@ -20,8 +20,8 @@ async function getCallNode(
         : 'vscode.provideIncomingCalls'
     const nodes = new Set<CallHierarchyNode>()
     const insertNode = async (node: CallHierarchyNode, depth = 0) => {
-        if (maxDepth > 0 && depth >= maxDepth) return
-        output.appendLine('resolve: ' + node.item.name)
+        if (maxDepth > 0 && depth >= maxDepth) return;
+        //output.appendLine('resolve: [' + node.item.name + '] from ' + node.item.uri.path)
         nodes.add(node)
         const calls:
             | vscode.CallHierarchyOutgoingCall[]
@@ -37,6 +37,13 @@ async function getCallNode(
             if (ignore(next)) {
                 output.appendLine('ignore it in config, ' + next.name)
                 return null
+            }
+            if (next?.uri?.path?.includes('/go/src/')
+                || next?.uri?.path?.includes('/go/pkg/')
+                || next?.uri?.path?.includes('/gopkg/')
+            ) {
+                output.appendLine('skipping: [' + next.name + '] from ' + next.uri.path)
+                return;
             }
             let isSkip = false
             for (const n of nodes) {
