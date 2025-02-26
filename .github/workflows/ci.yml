@@ -1,49 +1,55 @@
 name: 🛠️ Builds
 
 on:
-  push:
-    branches:
-      - '*'
-  pull_request:
-    branches:
-      - master
+    push:
+        branches:
+            - '*'
+    pull_request:
+        branches:
+            - master
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    build:
+        strategy:
+            matrix:
+                os: [macos-latest, ubuntu-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-    - name: Install Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
 
-    - name: Run npm install
-      run: npm install
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20.x
+                  registry-url: 'https://registry.npmjs.org'
+                  cache: 'pnpm'
 
-    - name: Run pretest
-      run: xvfb-run -a npm run pretest
-      if: runner.os == 'Linux'
+            - name: Run pnpm install
+              run: pnpm install
 
-    - name: Run pretest
-      run: npm run pretest
-      if: runner.os != 'Linux'
+            - name: Run pretest
+              run: xvfb-run -a pnpm run pretest
+              if: runner.os == 'Linux'
 
-    - name: Run vsce package
-      run: mkdir -p out/vsix && npm exec vsce package -- -o out/vsix/
+            - name: Run pretest
+              run: pnpm run pretest
+              if: runner.os != 'Linux'
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{ github.event.repository.name }}
-        path: |
-          ${{ github.workspace }}/out/vsix/
+            - name: Run vsce package
+              run: mkdir -p out/vsix/ && pnpm package -o out/vsix/
+
+            - name: Upload artifact
+              if: runner.os == 'Linux'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ github.event.repository.name }}
+                  path: |
+                      ${{ github.workspace }}/out/vsix/
