@@ -84,8 +84,7 @@ class Graph {
 
     constructor(isIncoming: boolean, title?: string) {
         this._isIncoming = isIncoming
-        this._dot =
-            (this._isIncoming ? 'digraph' : 'graph') + ` ${title ?? ''} {\n`
+        this._dot = 'digraph' + ` ${title ?? ''} {\n`
     }
     addAttr(attr: Attr) {
         this._dot += this.getAttr(attr, true)
