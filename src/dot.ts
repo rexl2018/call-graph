@@ -4,10 +4,10 @@ import * as vscode from 'vscode'
 import { isDeepStrictEqual } from "util"
 import { output } from "./extension"
 
-export function generateDot(graph: CallHierarchyNode, path: string) {
-    const dot = new Graph()
+export function generateDot(graph: CallHierarchyNode, path: string, isIncoming: boolean) {
+    const dot = new Graph(isIncoming)
     const root = vscode.workspace.workspaceFolders?.[0].uri.path ?? ''
-    dot.addAttr({ rankdir: "LR" })
+    dot.addAttr({ rankdir: isIncoming ? "RL" : "LR" })
     const getNode = (n: CallHierarchyNode) => {
         return {
             name: `"${n.item.uri.path}#${n.item.name}@${n.item.range.start.line}:${n.item.range.start.character}"`,
@@ -28,7 +28,12 @@ export function generateDot(graph: CallHierarchyNode, path: string) {
             let isSkip = false
             for (const s of set) {
                 if (isEqual(s, next)) {
-                    n.next.push(s)
+                    if (isIncoming) {
+                        // Reverse edge direction for incoming calls
+                        s.next.push(n)
+                    } else {
+                        n.next.push(s)
+                    }
                     isSkip = true
                 }
             }
@@ -65,7 +70,10 @@ class Graph {
     private _dot = ''
     private _subgraphs = new Map<string, string>()
     private _nodes = new Set<Node>()
-    constructor(title?: string) {
+    private _isIncoming: boolean
+
+    constructor(isIncoming: boolean, title?: string) {
+        this._isIncoming = isIncoming
         this._dot = (true ? 'digraph' : 'graph') + ` ${title ?? ''} {\n`
     }
     addAttr(attr: Attr) {
@@ -86,7 +94,7 @@ class Graph {
                     if (child.subgraph) this.insertToSubgraph(child.subgraph, child.name + ' ')
                     return child.name + this.getAttr(child.attr)
                 }).join(' ')
-                s += `{${name}} -> {${children}}\n`
+                s += this._isIncoming ? `{${children}} -> {${name}}\n` : `{${name}} -> {${children}}\n`
             }
             else s += name + '\n'
             this._dot += s

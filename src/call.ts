@@ -41,6 +41,8 @@ async function getCallNode(
             if (next?.uri?.path?.includes('/go/src/')
                 || next?.uri?.path?.includes('/go/pkg/')
                 || next?.uri?.path?.includes('/gopkg/')
+                || next?.uri?.path?.includes('/node_modules/')
+                || next?.name?.startsWith("Test")
             ) {
                 output.appendLine('skipping: [' + next.name + '] from ' + next.uri.path)
                 return;

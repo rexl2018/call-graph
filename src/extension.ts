@@ -61,7 +61,7 @@ const generateGraph = (
             return ignored
         })
 
-        generateDot(graph, dotFile.fsPath)
+        generateDot(graph, dotFile.fsPath, type === 'Incoming')
 
         const webviewType = `CallGraph.preview${type}`
         const panel = vscode.window.createWebviewPanel(
