@@ -13,8 +13,10 @@
     "activationEvents": [
         "onCommand:CallGraph.showOutgoingCallGraph",
         "onCommand:CallGraph.showIncomingCallGraph",
+        "onCommand:call-graph.preview",
         "onWebviewPanel:CallGraph.previewIncoming",
-        "onWebviewPanel:CallGraph.previewOutgoing"
+        "onWebviewPanel:CallGraph.previewOutgoing",
+        "onWebviewPanel:callGraphPreview"
     ],
     "main": "./out/extension.js",
     "contributes": {
@@ -26,6 +28,10 @@
             {
                 "command": "CallGraph.showIncomingCallGraph",
                 "title": "CallGraph: Show incoming call graph"
+            },
+            {
+                "command": "call-graph.preview",
+                "title": "CallGraph: Test d3-graphviz Preview"
             }
         ],
         "menus": {
@@ -107,6 +113,10 @@
         "dot"
     ],
     "dependencies": {
+        "d3": "^7.8.5",
+        "d3-graphviz": "^5.0.0",
+        "@hpcc-js/wasm": "^1.12.0",
+        "jquery.graphviz.svg": "^1.0.0",
         "ignore": "^6.0.2"
     },
     "simple-git-hooks": {
