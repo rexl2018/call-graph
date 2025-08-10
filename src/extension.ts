@@ -79,8 +79,49 @@ const onReceiveMsgFactory =
                     ),
                 })
                 if (!f) return
-                if (msg.data) {
-                    fs.writeFileSync(f.fsPath, msg.data)
+
+                let fileContent = msg.data
+                if (fileType === 'dot' && graph && dotFile) {
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: 保存DOT文件，isIncoming=${isIncoming}`,
+                    )
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: 保存前的DOT文件内容，长度=${fs.existsSync(dotFile.fsPath) ? fs.readFileSync(dotFile.fsPath).toString().length : 0}`,
+                    )
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: 前端传递的高亮节点ID=${msg.nodeId}`,
+                    )
+
+                    // Regenerate dot content to respect highlight status
+                    // 使用前端传递的nodeId参数，如果存在的话
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: 调用generateDot生成DOT文件，传入前端的高亮节点ID`,
+                    )
+                    generateDot(
+                        graph,
+                        dotFile.fsPath,
+                        isIncoming,
+                        msg.nodeId || undefined, // 使用前端传递的nodeId，如果不存在则使用undefined保持当前状态
+                    )
+
+                    // Read the content from the file, as generateDot already wrote to it
+                    fileContent = fs.readFileSync(dotFile.fsPath).toString()
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: 读取DOT文件内容，长度=${fileContent.length}`,
+                    )
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: DOT文件内容前100个字符: ${fileContent.substring(0, 100)}`,
+                    )
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: DOT文件内容是否包含"color"属性: ${fileContent.includes('color="blue"')}`,
+                    )
+                    console.log(
+                        `[DEBUG] onReceiveMsgFactory: DOT文件内容是否包含"penwidth"属性: ${fileContent.includes('penwidth="3"')}`,
+                    )
+                }
+
+                if (fileContent) {
+                    fs.writeFileSync(f.fsPath, fileContent)
                 }
                 vscode.window.showInformationMessage(
                     'Call Graph file saved: ' + f.fsPath,
@@ -105,7 +146,7 @@ const onReceiveMsgFactory =
             })
             output.appendLine('Graph updated and sent to webview.')
         } else if (msg.command === 'resetClicked' && graph && dotFile) {
-            generateDot(graph, dotFile.fsPath, isIncoming, undefined)
+            generateDot(graph, dotFile.fsPath, isIncoming, null)
             const dotContent = fs.readFileSync(dotFile.fsPath).toString()
             panel.webview.postMessage({
                 command: 'updateGraph',

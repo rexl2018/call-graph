@@ -9,34 +9,20 @@
         <script src="$GRAPH_INTERACTION_URI"></script>
         <link rel="stylesheet" href="$GRAPH_STYLES_URI" />
         <script>
-            // 记录资源加载状态
-            console.log('HTML loaded, scripts loading...')
+            // 资源加载状态监控
             window.addEventListener('DOMContentLoaded', () => {
-                console.log('DOM content loaded')
                 // 验证脚本是否加载
-                console.log('d3 loaded:', typeof d3 !== 'undefined')
-                console.log(
-                    'd3.graphviz loaded:',
-                    typeof window['d3-graphviz'] !== 'undefined' &&
-                        typeof window['d3-graphviz'].graphviz !== 'undefined',
-                )
-                console.log(
-                    'initializeInteractiveGraph loaded:',
-                    typeof initializeInteractiveGraph !== 'undefined',
-                )
+                if (
+                    typeof d3 === 'undefined' ||
+                    typeof window['d3-graphviz'] === 'undefined' ||
+                    typeof window['d3-graphviz'].graphviz === 'undefined' ||
+                    typeof initializeInteractiveGraph === 'undefined'
+                ) {
+                    console.error('必要的脚本未正确加载，请检查资源引用')
+                }
             })
             window.addEventListener('load', () => {
-                console.log('All resources loaded')
-                // 添加全局点击测试
-                document.addEventListener('click', e => {
-                    console.log(
-                        'Global click detected:',
-                        e.target,
-                        'at',
-                        e.clientX,
-                        e.clientY,
-                    )
-                })
+                // 资源加载完成
             })
         </script>
     </head>
@@ -93,24 +79,14 @@
 
                 // Initialize interactive functionality
                 const svg = d3.select('#app>svg').node()
-                console.log(
-                    'SVG element found:',
-                    svg,
-                    'tagName:',
-                    svg ? svg.tagName : 'null',
-                )
-                console.log('SVG has children:', svg ? svg.children.length : 0)
-
                 if (svg && window.initializeInteractiveGraph) {
                     const isIncoming = '$IS_INCOMING' === 'true'
                     window.initializeInteractiveGraph(svg, isIncoming)
-                    console.log('Interactive graph initialized')
 
-                    // Test SVG event binding
+                    // SVG event binding
                     svg.addEventListener('click', e => {
-                        console.log('SVG click event detected:', e.target)
+                        // 处理SVG点击事件
                     })
-                    console.log('SVG click test listener added')
                 } else {
                     console.error(
                         'Failed to initialize interactive graph - SVG:',
@@ -122,11 +98,24 @@
             }
 
             function initAndRender(dotContent) {
+                // 保存当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
                 d3.select('#graph-container').html('<div id="app"></div>') // Re-create the app container
                 gv = window['d3-graphviz']
                     .graphviz('#app')
                     .transition(() => d3.transition().duration(0))
-                gv.renderDot(dotContent, onGraphRendered)
+                gv.renderDot(dotContent, function () {
+                    onGraphRendered()
+
+                    // 恢复之前保存的高亮节点ID
+                    if (lastClickedNodeId && window.interactiveGraph) {
+                        window.interactiveGraph.lastClickedNodeId =
+                            lastClickedNodeId
+                    }
+                })
             }
 
             initAndRender(dot)
@@ -151,10 +140,16 @@
                 })
             })
             d3.select('#downloadDot').on('click', () => {
+                // 获取当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
                 vscode.postMessage({
                     command: 'download',
                     type: 'dot',
                     data: dot,
+                    nodeId: lastClickedNodeId, // 传递当前高亮的节点ID
                 })
             })
 
@@ -163,7 +158,6 @@
                 if (window.interactiveGraph) {
                     window.interactiveGraph.reset()
                     d3.select('#infoPanel').classed('show', false)
-                    console.log('Selection reset')
                 }
             })
 
@@ -172,9 +166,6 @@
                 const message = event.data // The JSON data our extension sent
                 switch (message.command) {
                     case 'updateGraph':
-                        console.log(
-                            'Received updateGraph command with new dot content.',
-                        )
                         initAndRender(message.dot)
                         break
                 }

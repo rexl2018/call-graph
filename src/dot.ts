@@ -8,7 +8,7 @@ export function generateDot(
     graph: CallHierarchyNode,
     path: string,
     isIncoming: boolean,
-    clickedNodeId?: string,
+    clickedNodeId?: string | null,
 ) {
     const dot = new Graph(isIncoming)
     const root = vscode.workspace.workspaceFolders?.[0].uri.path ?? ''
@@ -72,6 +72,14 @@ export function generateDot(
     }
     insertNode(node, graph)
     dot.addNode(node)
+    console.log(
+        `[DEBUG] generateDot: clickedNodeId=${clickedNodeId}, isIncoming=${isIncoming}`,
+    )
+    // 打印当前高亮状态
+    console.log(
+        `[DEBUG] generateDot: 当前高亮状态 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
+    )
+
     if (clickedNodeId) {
         // 确保clickedNodeId格式与_nodes中的节点名称格式一致
         // 如果clickedNodeId不包含引号，则添加引号
@@ -82,7 +90,26 @@ export function generateDot(
         output.appendLine(
             `点击的节点ID: ${clickedNodeId}, 格式化后: ${formattedNodeId}`,
         )
+        console.log(
+            `[DEBUG] generateDot: 高亮子图，formattedNodeId=${formattedNodeId}`,
+        )
         dot.highlightSubgraph(formattedNodeId)
+        console.log(
+            `[DEBUG] generateDot: 高亮后 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
+        )
+    } else if (clickedNodeId === undefined) {
+        // undefined means we should not change the highlight status
+        // which is useful for saving the dot file with current highlight
+        console.log(
+            `[DEBUG] generateDot: 保持当前高亮状态 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
+        )
+    } else {
+        // null or empty string means we should reset the highlight
+        console.log(`[DEBUG] generateDot: 重置高亮状态`)
+        dot.resetHighlight()
+        console.log(
+            `[DEBUG] generateDot: 重置后 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
+        )
     }
     const dotContent = dot.toString()
     fs.writeFileSync(path, dotContent)
@@ -121,6 +148,26 @@ interface Subgraph {
     cluster?: boolean
 }
 class Graph {
+    resetHighlight() {
+        this._highlightedNodes.clear()
+        this._highlightedEdges.clear()
+        this._highlightedSubgraphs.clear()
+    }
+
+    // 获取高亮节点数量
+    getHighlightedNodesCount() {
+        return this._highlightedNodes.size
+    }
+
+    // 获取高亮边数量
+    getHighlightedEdgesCount() {
+        return this._highlightedEdges.size
+    }
+
+    // 获取高亮子图数量
+    getHighlightedSubgraphsCount() {
+        return this._highlightedSubgraphs.size
+    }
     private _title: string
     private _isIncoming: boolean
     private _attrs: Attr = {}
@@ -326,6 +373,23 @@ class Graph {
     }
 
     toString() {
+        const hasHighlight = this._highlightedNodes.size > 0
+        console.log(
+            `[DEBUG] toString: hasHighlight=${hasHighlight}, highlightedNodes=${this._highlightedNodes.size}, highlightedEdges=${this._highlightedEdges.size}, highlightedSubgraphs=${this._highlightedSubgraphs.size}`,
+        )
+
+        // 打印部分高亮节点和边的信息，用于调试
+        if (hasHighlight) {
+            const nodeSample = [...this._highlightedNodes]
+                .slice(0, 3)
+                .join(', ')
+            const edgeSample = [...this._highlightedEdges]
+                .slice(0, 3)
+                .join(', ')
+            console.log(`[DEBUG] toString: 高亮节点示例: ${nodeSample}`)
+            console.log(`[DEBUG] toString: 高亮边示例: ${edgeSample}`)
+        }
+
         let dot = `digraph "${this._title}" {\n`
 
         // Graph attributes
@@ -333,7 +397,13 @@ class Graph {
 
         // Node definitions
         dot += '\n    // Nodes\n'
-        for (const node of this._nodes.values()) {
+        const nodesToRender = hasHighlight
+            ? [...this._highlightedNodes]
+            : [...this._nodes.keys()]
+        for (const nodeName of nodesToRender) {
+            const node = this._nodes.get(nodeName)
+            if (!node) continue
+
             const nodeAttr = { ...node.attr }
             if (this._highlightedNodes.has(node.name)) {
                 nodeAttr.color = 'blue'
@@ -344,44 +414,69 @@ class Graph {
 
         // Subgraph definitions
         dot += '\n    // Subgraphs\n'
-        for (const [sgName, sgData] of this._subgraphs.entries()) {
-            dot += `    subgraph "cluster_${sgName}" {\n`
+        const subgraphsToRender = hasHighlight
+            ? [...this._highlightedSubgraphs]
+            : [...this._subgraphs.keys()]
 
-            const graphAttrs: Attr = {}
-            if (sgData.attr?.label) {
-                graphAttrs.label = sgData.attr.label
+        for (const sgName of subgraphsToRender) {
+            const sgData = this._subgraphs.get(sgName)
+            if (!sgData) continue
+
+            const nodesInSubgraph = [...sgData.nodes].filter(nodeName =>
+                hasHighlight ? this._highlightedNodes.has(nodeName) : true,
+            )
+
+            // Only render subgraph if it contains nodes to render
+            if (nodesInSubgraph.length > 0) {
+                dot += `    subgraph "cluster_${sgName}" {\n`
+
+                const graphAttrs: Attr = {}
+                if (sgData.attr?.label) {
+                    graphAttrs.label = sgData.attr.label
+                }
+
+                if (this._highlightedSubgraphs.has(sgName)) {
+                    graphAttrs.color = 'blue'
+                    graphAttrs.penwidth = '3' // 增加高亮子图的边框粗细
+                }
+
+                if (Object.keys(graphAttrs).length > 0) {
+                    dot += `        graph${this.getAttr(graphAttrs)};\n`
+                }
+
+                dot += `        ${nodesInSubgraph.join(' ')};\n`
+                dot += `    }\n`
             }
-
-            if (this._highlightedSubgraphs.has(sgName)) {
-                graphAttrs.color = 'blue'
-                graphAttrs.penwidth = '3' // 增加高亮子图的边框粗细
-            }
-
-            // Use getAttr with isSelf=false to get the [key="value"] format
-            if (Object.keys(graphAttrs).length > 0) {
-                dot += `        graph${this.getAttr(graphAttrs)};\n`
-            }
-
-            dot += `        ${[...sgData.nodes].join(' ')};\n`
-            dot += `    }\n`
         }
 
         // Edge definitions
         dot += '\n    // Edges\n'
-        output.appendLine(
-            `高亮边列表: ${[...this._highlightedEdges].join(', ')}`,
+        const edgesToRender = hasHighlight
+            ? this._highlightedEdges
+            : this._edges
+        console.log(
+            `[DEBUG] toString: 要渲染的边数量=${edgesToRender.size}, 是否只渲染高亮边=${hasHighlight}`,
         )
-        output.appendLine(`所有边列表: ${[...this._edges].join(', ')}`)
-        for (const edge of this._edges) {
+
+        let edgeCount = 0
+        for (const edge of edgesToRender) {
             const edgeAttr: Attr = {}
-            const isHighlighted = this._highlightedEdges.has(edge)
-            output.appendLine(`检查边 ${edge} 是否高亮: ${isHighlighted}`)
-            if (isHighlighted) {
+            if (this._highlightedEdges.has(edge)) {
                 edgeAttr.color = 'blue'
                 edgeAttr.penwidth = '3' // 增加高亮边的边框粗细
+                console.log(`[DEBUG] toString: 添加高亮边属性 - ${edge}`)
             }
             dot += `    ${edge}${this.getAttr(edgeAttr)};\n`
+            edgeCount++
+
+            // 只打印前几条边的信息，避免日志过多
+            if (edgeCount <= 5) {
+                console.log(
+                    `[DEBUG] toString: 添加边 #${edgeCount} - ${edge}${this.getAttr(edgeAttr)}`,
+                )
+            }
         }
+        console.log(`[DEBUG] toString: 总共添加了 ${edgeCount} 条边`)
 
         dot += '}\n'
         return dot

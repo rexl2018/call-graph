@@ -32,6 +32,7 @@ class InteractiveCallGraph {
         this.edges = null
         this.nodes = null
         this.selectedNode = null
+        this.lastClickedNodeId = null // 保存最后一次点击的节点ID
         this.vscode = window.vscode
     }
 
@@ -43,8 +44,7 @@ class InteractiveCallGraph {
         setTimeout(() => {
             this.initializeElements()
             this.addListeners()
-            this.applyDotAttributes() // 添加这一行，应用DOT属性到SVG元素
-            console.log('Interactive call graph activated')
+            this.applyDotAttributes() // 应用DOT属性到SVG元素
         }, 100)
     }
 
@@ -59,7 +59,6 @@ class InteractiveCallGraph {
 
             // 获取边的标题内容，格式通常是 "fromNode" -> "toNode"
             const titleText = title.textContent
-            console.log(`检查边: ${titleText}`)
 
             // 查找边的path和polygon元素
             const paths = edge.querySelectorAll('path:not(.hover-path)')
@@ -80,7 +79,6 @@ class InteractiveCallGraph {
                     match[1] !== '#000000'
                 ) {
                     color = match[1]
-                    console.log(`从style属性找到颜色: ${color}`)
                 }
             }
 
@@ -93,7 +91,6 @@ class InteractiveCallGraph {
                     strokeAttr !== '#000000'
                 ) {
                     color = strokeAttr
-                    console.log(`从stroke属性找到颜色: ${color}`)
                 }
             }
 
@@ -104,11 +101,9 @@ class InteractiveCallGraph {
                 titleText.includes('"2_3_117_34" -> "2_5_238_34"')
             ) {
                 color = '#2196F3' // 蓝色
-                console.log(`从已知的高亮边列表中找到颜色`)
             }
 
             if (color) {
-                console.log(`应用颜色 ${color} 到边 ${titleText}`)
                 paths.forEach(path => {
                     path.style.stroke = color
                     path.style.strokeWidth = '2.5px'
@@ -130,20 +125,10 @@ class InteractiveCallGraph {
         this.nodes = Array.from(this.svg.querySelectorAll('.node'))
         this.edges = Array.from(this.svg.querySelectorAll('.edge'))
 
-        console.log(
-            `Found ${this.nodes.length} nodes and ${this.edges.length} edges`,
-        )
-
         // If no nodes found with .node class, try alternative selectors
         if (this.nodes.length === 0) {
-            console.log(
-                'No .node elements found, trying alternative selectors...',
-            )
             this.nodes = Array.from(
                 this.svg.querySelectorAll('g[class*="node"]'),
-            )
-            console.log(
-                `Found ${this.nodes.length} nodes with g[class*="node"] selector`,
             )
 
             if (this.nodes.length === 0) {
@@ -276,6 +261,8 @@ class InteractiveCallGraph {
      */
     reset() {
         console.log('Resetting selection, sending message to extension.')
+        // 清除保存的节点ID
+        this.lastClickedNodeId = null
         this.vscode.postMessage({
             command: 'resetClicked',
         })
@@ -292,6 +279,8 @@ class InteractiveCallGraph {
             console.log(
                 `Node clicked: ${nodeId}, sending message to extension.`,
             )
+            // 保存最后一次点击的节点ID
+            this.lastClickedNodeId = nodeId
             this.vscode.postMessage({
                 command: 'nodeClicked',
                 nodeId: nodeId,
