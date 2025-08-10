@@ -11,13 +11,35 @@ export function generateDot(
 ) {
     const dot = new Graph(isIncoming)
     const root = vscode.workspace.workspaceFolders?.[0].uri.path ?? ''
+    const fileIdMap = new Map<string, number>()
+    const funcIdMap = new Map<string, number>()
+    let fileCounter = 1
+    let funcCounter = 1
+
     dot.addAttr({ rankdir: isIncoming ? 'RL' : 'LR' })
     const getNode = (n: CallHierarchyNode) => {
+        const filePath = n.item.uri.path
+        const funcName = n.item.name
+        const line = n.item.range.start.line
+        const char = n.item.range.start.character
+
+        if (!fileIdMap.has(filePath)) {
+            fileIdMap.set(filePath, fileCounter++)
+        }
+        if (!funcIdMap.has(funcName)) {
+            funcIdMap.set(funcName, funcCounter++)
+        }
+
+        const fileId = fileIdMap.get(filePath)
+        const funcId = funcIdMap.get(funcName)
+
+        const nodeId = `${fileId}_${funcId}_${line}_${char}`
+
         return {
-            name: `"${n.item.uri.path}#${n.item.name}@${n.item.range.start.line}:${n.item.range.start.character}"`,
+            name: `"${nodeId}"`, // Use the new ID format
             attr: { label: n.item.name },
             subgraph: {
-                name: n.item.uri.path,
+                name: String(fileId),
                 attr: { label: n.item.uri.path.replace(root, '${workspace}') },
             },
             next: [],
@@ -82,75 +104,106 @@ interface Subgraph {
     cluster?: boolean
 }
 class Graph {
-    private _dot = ''
-    private _subgraphs = new Map<string, string>()
-    private _nodes = new Set<Node>()
+    private _title: string
     private _isIncoming: boolean
+    private _attrs: Attr = {}
+    private _nodes = new Map<string, Node>()
+    private _edges = new Set<string>()
+    private _subgraphs = new Map<string, { attr?: Attr; nodes: Set<string> }>()
 
     constructor(isIncoming: boolean, title?: string) {
         this._isIncoming = isIncoming
-        this._dot = 'digraph' + ` ${title ?? ''} {\n`
-    }
-    addAttr(attr: Attr) {
-        this._dot += this.getAttr(attr, true)
-    }
-    addNode(...nodes: Node[]) {
-        nodes.forEach(n => {
-            this._nodes.add(n)
-            const name = n.name + this.getAttr(n.attr)
-            if (n.subgraph) this.insertToSubgraph(n.subgraph, n.name + ' ')
-            let s = ''
-            const removeRepeat = [] as number[]
-            if (n.next.length > 0) {
-                const children = n.next
-                    .map((child, index) => {
-                        for (const s of this._nodes) {
-                            if (isDeepStrictEqual(s, child))
-                                removeRepeat.push(index)
-                        }
-                        if (child.subgraph)
-                            this.insertToSubgraph(
-                                child.subgraph,
-                                child.name + ' ',
-                            )
-                        return child.name + this.getAttr(child.attr)
-                    })
-                    .join(' ')
-                s += this._isIncoming
-                    ? `{${children}} -> {${name}}\n`
-                    : `{${name}} -> {${children}}\n`
-            } else s += name + '\n'
-            this._dot += s
-            this.addNode(
-                ...n.next.filter((_, index) => !removeRepeat.includes(index)),
-            )
-        })
-    }
-    private insertToSubgraph(subgraph: Subgraph, s: string) {
-        const name = subgraph.name
-        if (!this._subgraphs.has(name)) {
-            this._subgraphs.set(
-                name,
-                `subgraph "${((subgraph.cluster ?? true) ? 'cluster_' : '') + name}" {\n${this.getAttr(subgraph.attr, true)}`,
-            )
-        }
-        this._subgraphs.set(name, this._subgraphs.get(name) + s)
+        this._title = title ?? ''
     }
 
-    private getAttr(attr?: Attr, isSelf = false) {
-        if (!attr) return ''
-        let s = isSelf ? '' : '['
-        Object.keys(attr).forEach(k => {
-            s += `${k}="${attr[k]}"` + (isSelf ? '\n' : ', ')
-        })
-        if (!isSelf) s += ']'
-        return s
+    addAttr(attr: Attr) {
+        this._attrs = { ...this._attrs, ...attr }
     }
+
+    addNode(...nodes: Node[]) {
+        for (const node of nodes) {
+            this.traverseAndCollect(node)
+        }
+    }
+
+    private traverseAndCollect(node: Node) {
+        if (this._nodes.has(node.name)) {
+            return
+        }
+        this._nodes.set(node.name, node)
+
+        if (node.subgraph) {
+            const sgName = node.subgraph.name
+            if (!this._subgraphs.has(sgName)) {
+                this._subgraphs.set(sgName, {
+                    attr: node.subgraph.attr,
+                    nodes: new Set(),
+                })
+            }
+            this._subgraphs.get(sgName)!.nodes.add(node.name)
+        }
+
+        const childrenNames = node.next.map(child => child.name)
+        if (childrenNames.length > 0) {
+            const childrenStr =
+                childrenNames.length > 1
+                    ? `{${childrenNames.join(' ')}}`
+                    : childrenNames[0]
+            const edge = this._isIncoming
+                ? `${childrenStr} -> ${node.name}`
+                : `${node.name} -> ${childrenStr}`
+            this._edges.add(edge)
+        }
+
+        for (const child of node.next) {
+            this.traverseAndCollect(child)
+        }
+    }
+
+    private getAttr(attr?: Attr, isSelf = false, indent = '') {
+        if (!attr || Object.keys(attr).length === 0) return ''
+        if (isSelf) {
+            return (
+                Object.entries(attr)
+                    .map(([k, v]) => `${indent}${k}="${v}";`)
+                    .join('\n') + '\n'
+            )
+        } else {
+            const attrs = Object.entries(attr)
+                .map(([k, v]) => `${k}="${v}"`)
+                .join(', ')
+            return ` [${attrs}]`
+        }
+    }
+
     toString() {
-        let sub = ''
-        this._subgraphs.forEach(v => {
-            sub += v + '}\n'
-        })
-        return this._dot + sub + '}\n'
+        let dot = `digraph "${this._title}" {\n`
+
+        // Graph attributes
+        dot += this.getAttr(this._attrs, true, '    ')
+
+        // Node definitions
+        dot += '\n    // Nodes\n'
+        for (const node of this._nodes.values()) {
+            dot += `    ${node.name}${this.getAttr(node.attr)};\n`
+        }
+
+        // Subgraph definitions
+        dot += '\n    // Subgraphs\n'
+        for (const [sgName, sgData] of this._subgraphs.entries()) {
+            dot += `    subgraph "cluster_${sgName}" {\n`
+            dot += this.getAttr(sgData.attr, true, '        ')
+            dot += `        ${[...sgData.nodes].join(' ')};\n`
+            dot += `    }\n`
+        }
+
+        // Edge definitions
+        dot += '\n    // Edges\n'
+        for (const edge of this._edges) {
+            dot += `    ${edge};\n`
+        }
+
+        dot += '}\n'
+        return dot
     }
 }

@@ -24,7 +24,8 @@ const getHtmlContent = (
     dotFileUri: string,
     d3Uri: string,
     d3GraphvizUri: string,
-    graphvizlibUri: string,
+    graphInteractionUri: string,
+    graphStylesUri: string,
 ) => {
     return fs
         .readFileSync(path.resolve(staticDir, 'index.html'))
@@ -35,8 +36,11 @@ const getHtmlContent = (
         .join(d3Uri)
         .split('$D3_GRAPHVIZ_URI')
         .join(d3GraphvizUri)
-        .split('$GRAPHVIZLIB_URI')
-        .join(graphvizlibUri)
+
+        .split('$GRAPH_INTERACTION_URI')
+        .join(graphInteractionUri)
+        .split('$GRAPH_STYLES_URI')
+        .join(graphStylesUri)
 }
 const generateGraph = (
     type: 'Incoming' | 'Outgoing',
@@ -126,11 +130,20 @@ const generateGraph = (
                 ),
             )
             .toString()
-        const graphvizlibUri = panel.webview
+
+        const graphInteractionUri = panel.webview
             .asWebviewUri(
                 vscode.Uri.joinPath(
                     vscode.Uri.file(staticDir),
-                    'lib/hpcc-js/wasm/graphvizlib.js',
+                    'graph-interaction.js',
+                ),
+            )
+            .toString()
+        const graphStylesUri = panel.webview
+            .asWebviewUri(
+                vscode.Uri.joinPath(
+                    vscode.Uri.file(staticDir),
+                    'graph-styles.css',
                 ),
             )
             .toString()
@@ -140,7 +153,8 @@ const generateGraph = (
             dotFileUri,
             d3Uri,
             d3GraphvizUri,
-            graphvizlibUri,
+            graphInteractionUri,
+            graphStylesUri,
         )
         panel.webview.onDidReceiveMessage(onReceiveMsg)
     }
@@ -198,11 +212,20 @@ const registerWebviewPanelSerializer = (
                     ),
                 )
                 .toString()
-            const graphvizlibUri = webviewPanel.webview
+
+            const graphInteractionUri = webviewPanel.webview
                 .asWebviewUri(
                     vscode.Uri.joinPath(
                         vscode.Uri.file(staticDir),
-                        'lib/hpcc-js/wasm/graphvizlib.js',
+                        'graph-interaction.js',
+                    ),
+                )
+                .toString()
+            const graphStylesUri = webviewPanel.webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(
+                        vscode.Uri.file(staticDir),
+                        'graph-styles.css',
                     ),
                 )
                 .toString()
@@ -212,7 +235,8 @@ const registerWebviewPanelSerializer = (
                 state,
                 d3Uri,
                 d3GraphvizUri,
-                graphvizlibUri,
+                graphInteractionUri,
+                graphStylesUri,
             )
             webviewPanel.webview.onDidReceiveMessage(onReceiveMsg)
         },
@@ -274,14 +298,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     ),
                 )
                 .toString()
-            const graphvizlibUri = panel.webview
-                .asWebviewUri(
-                    vscode.Uri.joinPath(
-                        context.extensionUri,
-                        'static/lib/hpcc-js/wasm/graphvizlib.js',
-                    ),
-                )
-                .toString()
+
             const testScriptUri = panel.webview
                 .asWebviewUri(
                     vscode.Uri.joinPath(
@@ -294,6 +311,23 @@ export async function activate(context: vscode.ExtensionContext) {
             // 使用示例DOT内容进行测试
             const sampleDotContent = 'digraph G { A -> B -> C; B -> D; }'
 
+            const graphInteractionUri = panel.webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(
+                        vscode.Uri.file(staticDir),
+                        'graph-interaction.js',
+                    ),
+                )
+                .toString()
+            const graphStylesUri = panel.webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(
+                        vscode.Uri.file(staticDir),
+                        'graph-styles.css',
+                    ),
+                )
+                .toString()
+
             // 构建HTML内容
             let html = getHtmlContent(
                 staticDir,
@@ -301,7 +335,8 @@ export async function activate(context: vscode.ExtensionContext) {
                     encodeURIComponent(sampleDotContent),
                 d3Uri,
                 d3GraphvizUri,
-                graphvizlibUri,
+                graphInteractionUri,
+                graphStylesUri,
             )
 
             // 添加测试脚本

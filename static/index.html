@@ -6,15 +6,37 @@
         <title>Call Graph</title>
         <script src="$D3_URI"></script>
         <script src="$D3_GRAPHVIZ_URI"></script>
-        <script src="$GRAPHVIZLIB_URI"></script>
+        <script src="$GRAPH_INTERACTION_URI"></script>
+        <link rel="stylesheet" href="$GRAPH_STYLES_URI" />
         <script>
             // 记录资源加载状态
             console.log('HTML loaded, scripts loading...')
             window.addEventListener('DOMContentLoaded', () => {
                 console.log('DOM content loaded')
+                // 验证脚本是否加载
+                console.log('d3 loaded:', typeof d3 !== 'undefined')
+                console.log(
+                    'd3.graphviz loaded:',
+                    typeof window['d3-graphviz'] !== 'undefined' &&
+                        typeof window['d3-graphviz'].graphviz !== 'undefined',
+                )
+                console.log(
+                    'initializeInteractiveGraph loaded:',
+                    typeof initializeInteractiveGraph !== 'undefined',
+                )
             })
             window.addEventListener('load', () => {
                 console.log('All resources loaded')
+                // 添加全局点击测试
+                document.addEventListener('click', e => {
+                    console.log(
+                        'Global click detected:',
+                        e.target,
+                        'at',
+                        e.clientX,
+                        e.clientY,
+                    )
+                })
             })
         </script>
     </head>
@@ -24,6 +46,15 @@
         <div class="btn-container">
             <button class="btn" id="downloadDot">save dot file</button>
             <button class="btn" id="downloadSvg">save as svg</button>
+            <button class="btn reset" id="resetSelection">
+                reset selection
+            </button>
+        </div>
+        <div class="info-panel" id="infoPanel">
+            <div class="title">Node Information</div>
+            <div class="content" id="infoPanelContent">
+                Click on a node to see details
+            </div>
         </div>
     </body>
     <script>
@@ -37,17 +68,56 @@
                 .attr('viewBox', [0, 0, width, height].join(' '))
         }
 
-        ;(async function () {
+        document.addEventListener('DOMContentLoaded', async function () {
             const vscode = acquireVsCodeApi()
             // Inject dot file uri: $DOT_FILE_URI
             vscode.setState('$DOT_FILE_URI')
             const dot = await (await fetch('$DOT_FILE_URI')).text()
-            const gv = d3
-                .select('#app')
-                .graphviz()
+
+            // Ensure #app element exists
+            const appElement = d3.select('#app')
+            console.log('App element:', appElement.node())
+            if (!appElement.node()) {
+                console.error('App element not found!')
+                return
+            }
+
+            const gv = window['d3-graphviz']
+                .graphviz('#app')
                 .renderDot(dot, () => {
                     d3.select(window).on('resize.updatesvg', updateSvgViewBox)
                     updateSvgViewBox()
+
+                    // Initialize interactive functionality
+                    const svg = d3.select('#app>svg').node()
+                    console.log(
+                        'SVG element found:',
+                        svg,
+                        'tagName:',
+                        svg ? svg.tagName : 'null',
+                    )
+                    console.log(
+                        'SVG has children:',
+                        svg ? svg.children.length : 0,
+                    )
+
+                    if (svg && window.initializeInteractiveGraph) {
+                        window.initializeInteractiveGraph(svg)
+                        console.log('Interactive graph initialized')
+
+                        // Test SVG event binding
+                        svg.addEventListener('click', e => {
+                            console.log('SVG click event detected:', e.target)
+                        })
+                        console.log('SVG click test listener added')
+                    } else {
+                        console.error(
+                            'Failed to initialize interactive graph - SVG:',
+                            !!svg,
+                            'initFunc:',
+                            !!window.initializeInteractiveGraph,
+                        )
+                    }
                 })
             d3.select('#downloadSvg').on('click', () => {
                 gv.resetZoom()
@@ -75,7 +145,16 @@
                     data: dot,
                 })
             })
-        })()
+
+            // Reset selection button
+            d3.select('#resetSelection').on('click', () => {
+                if (window.interactiveGraph) {
+                    window.interactiveGraph.reset()
+                    d3.select('#infoPanel').classed('show', false)
+                    console.log('Selection reset')
+                }
+            })
+        })
     </script>
     <style>
         .btn-container {
@@ -99,6 +178,42 @@
 
         .btn:hover {
             background-color: #0069d9;
+        }
+
+        .btn.reset {
+            background-color: #6c757d;
+        }
+
+        .btn.reset:hover {
+            background-color: #5a6268;
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .info-panel.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .info-panel .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .info-panel .content {
+            font-size: 14px;
         }
     </style>
 </html>
