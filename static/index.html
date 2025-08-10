@@ -42,7 +42,9 @@
     </head>
 
     <body>
-        <div id="app" style="width: 100%; height: 100vh"></div>
+        <div id="graph-container" style="width: 100%; height: 100vh">
+            <div id="app"></div>
+        </div>
         <div class="btn-container">
             <button class="btn" id="downloadDot">save dot file</button>
             <button class="btn" id="downloadSvg">save as svg</button>
@@ -69,7 +71,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', async function () {
-            const vscode = acquireVsCodeApi()
+            window.vscode = acquireVsCodeApi()
+            const vscode = window.vscode
             // Inject dot file uri: $DOT_FILE_URI
             vscode.setState('$DOT_FILE_URI')
             const dot = await (await fetch('$DOT_FILE_URI')).text()
@@ -82,43 +85,52 @@
                 return
             }
 
-            const gv = window['d3-graphviz']
-                .graphviz('#app')
-                .renderDot(dot, () => {
-                    d3.select(window).on('resize.updatesvg', updateSvgViewBox)
-                    updateSvgViewBox()
+            let gv
 
-                    // Initialize interactive functionality
-                    const svg = d3.select('#app>svg').node()
-                    console.log(
-                        'SVG element found:',
-                        svg,
-                        'tagName:',
-                        svg ? svg.tagName : 'null',
+            function onGraphRendered() {
+                d3.select(window).on('resize.updatesvg', updateSvgViewBox)
+                updateSvgViewBox()
+
+                // Initialize interactive functionality
+                const svg = d3.select('#app>svg').node()
+                console.log(
+                    'SVG element found:',
+                    svg,
+                    'tagName:',
+                    svg ? svg.tagName : 'null',
+                )
+                console.log('SVG has children:', svg ? svg.children.length : 0)
+
+                if (svg && window.initializeInteractiveGraph) {
+                    const isIncoming = '$IS_INCOMING' === 'true'
+                    window.initializeInteractiveGraph(svg, isIncoming)
+                    console.log('Interactive graph initialized')
+
+                    // Test SVG event binding
+                    svg.addEventListener('click', e => {
+                        console.log('SVG click event detected:', e.target)
+                    })
+                    console.log('SVG click test listener added')
+                } else {
+                    console.error(
+                        'Failed to initialize interactive graph - SVG:',
+                        !!svg,
+                        'initFunc:',
+                        !!window.initializeInteractiveGraph,
                     )
-                    console.log(
-                        'SVG has children:',
-                        svg ? svg.children.length : 0,
-                    )
+                }
+            }
 
-                    if (svg && window.initializeInteractiveGraph) {
-                        window.initializeInteractiveGraph(svg)
-                        console.log('Interactive graph initialized')
+            function initAndRender(dotContent) {
+                d3.select('#graph-container').html('<div id="app"></div>') // Re-create the app container
+                gv = window['d3-graphviz']
+                    .graphviz('#app')
+                    .transition(() => d3.transition().duration(0))
+                gv.renderDot(dotContent, onGraphRendered)
+            }
 
-                        // Test SVG event binding
-                        svg.addEventListener('click', e => {
-                            console.log('SVG click event detected:', e.target)
-                        })
-                        console.log('SVG click test listener added')
-                    } else {
-                        console.error(
-                            'Failed to initialize interactive graph - SVG:',
-                            !!svg,
-                            'initFunc:',
-                            !!window.initializeInteractiveGraph,
-                        )
-                    }
-                })
+            initAndRender(dot)
+
             d3.select('#downloadSvg').on('click', () => {
                 gv.resetZoom()
                 const svgElement = d3.select('#app>svg')
@@ -152,6 +164,19 @@
                     window.interactiveGraph.reset()
                     d3.select('#infoPanel').classed('show', false)
                     console.log('Selection reset')
+                }
+            })
+
+            // Listen for messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data // The JSON data our extension sent
+                switch (message.command) {
+                    case 'updateGraph':
+                        console.log(
+                            'Received updateGraph command with new dot content.',
+                        )
+                        initAndRender(message.dot)
+                        break
                 }
             })
         })

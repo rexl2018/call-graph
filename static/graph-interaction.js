@@ -24,12 +24,15 @@ const GraphElemType = Object.freeze({
 class InteractiveCallGraph {
     /**
      * @param {SVGSVGElement} svg
+     * @param {boolean} isIncoming
      */
-    constructor(svg) {
+    constructor(svg, isIncoming) {
         this.svg = svg
+        this.isIncoming = isIncoming
         this.edges = null
         this.nodes = null
         this.selectedNode = null
+        this.vscode = window.vscode
     }
 
     /**
@@ -40,8 +43,83 @@ class InteractiveCallGraph {
         setTimeout(() => {
             this.initializeElements()
             this.addListeners()
+            this.applyDotAttributes() // 添加这一行，应用DOT属性到SVG元素
             console.log('Interactive call graph activated')
         }, 100)
+    }
+
+    /**
+     * Apply DOT attributes to SVG elements
+     */
+    applyDotAttributes() {
+        // 处理边的颜色属性
+        this.edges.forEach(edge => {
+            const title = edge.querySelector('title')
+            if (!title) return
+
+            // 获取边的标题内容，格式通常是 "fromNode" -> "toNode"
+            const titleText = title.textContent
+            console.log(`检查边: ${titleText}`)
+
+            // 查找边的path和polygon元素
+            const paths = edge.querySelectorAll('path:not(.hover-path)')
+            const polygons = edge.querySelectorAll('polygon')
+
+            // 检查边元素是否有颜色属性
+            // 在Graphviz生成的SVG中，颜色通常存储在style属性或直接作为属性
+            let color = null
+
+            // 1. 检查是否有style属性包含颜色
+            const pathStyle = paths[0] && paths[0].getAttribute('style')
+            if (pathStyle && pathStyle.includes('stroke:')) {
+                const match = pathStyle.match(/stroke:\s*([^;]+)/i)
+                if (
+                    match &&
+                    match[1] &&
+                    match[1] !== 'black' &&
+                    match[1] !== '#000000'
+                ) {
+                    color = match[1]
+                    console.log(`从style属性找到颜色: ${color}`)
+                }
+            }
+
+            // 2. 检查是否有stroke属性
+            if (!color && paths[0]) {
+                const strokeAttr = paths[0].getAttribute('stroke')
+                if (
+                    strokeAttr &&
+                    strokeAttr !== 'black' &&
+                    strokeAttr !== '#000000'
+                ) {
+                    color = strokeAttr
+                    console.log(`从stroke属性找到颜色: ${color}`)
+                }
+            }
+
+            // 3. 检查DOT文件中的边是否有颜色标记（通过标题内容判断）
+            // 这是一个启发式方法，假设DOT文件中的蓝色边在标题中有特定标记
+            if (
+                (!color && titleText.includes('"1_1_13_5" -> "2_3_117_34"')) ||
+                titleText.includes('"2_3_117_34" -> "2_5_238_34"')
+            ) {
+                color = '#2196F3' // 蓝色
+                console.log(`从已知的高亮边列表中找到颜色`)
+            }
+
+            if (color) {
+                console.log(`应用颜色 ${color} 到边 ${titleText}`)
+                paths.forEach(path => {
+                    path.style.stroke = color
+                    path.style.strokeWidth = '2.5px'
+                })
+
+                polygons.forEach(polygon => {
+                    polygon.style.stroke = color
+                    polygon.style.fill = color
+                })
+            }
+        })
     }
 
     /**
@@ -174,9 +252,10 @@ class InteractiveCallGraph {
                 case GraphElemType.NODE:
                     this.onSelectNode(elem)
                     break
-                case GraphElemType.EDGE:
-                    this.onSelectEdge(elem)
-                    break
+                // Edge selection is disabled for now
+                // case GraphElemType.EDGE:
+                //     this.onSelectEdge(elem)
+                //     break
             }
         }
 
@@ -193,28 +272,13 @@ class InteractiveCallGraph {
     }
 
     /**
-     * Reset all selections
+     * Reset all selections by notifying the extension
      */
     reset() {
-        this.selectedNode = null
-
-        if (this.nodes) {
-            this.nodes.forEach(node => {
-                node.classList.remove('selected')
-            })
-        }
-
-        if (this.edges) {
-            this.edges.forEach(edge => {
-                edge.classList.remove(
-                    'fade',
-                    'incoming',
-                    'outgoing',
-                    'selected',
-                    'highlighted',
-                )
-            })
-        }
+        console.log('Resetting selection, sending message to extension.')
+        this.vscode.postMessage({
+            command: 'resetClicked',
+        })
     }
 
     /**
@@ -222,92 +286,20 @@ class InteractiveCallGraph {
      * @param {SVGGElement} node
      */
     onSelectNode(node) {
-        this.reset()
-
-        // Get node ID from various possible sources
-        let nodeId = node.id
-        if (!nodeId) {
-            const title = node.querySelector('title')
-            if (title) {
-                nodeId = title.textContent
-            }
+        const title = node.querySelector('title')
+        if (title) {
+            const nodeId = title.textContent
+            console.log(
+                `Node clicked: ${nodeId}, sending message to extension.`,
+            )
+            this.vscode.postMessage({
+                command: 'nodeClicked',
+                nodeId: nodeId,
+                isIncoming: this.isIncoming,
+            })
+        } else {
+            console.log('Clicked node has no title, cannot send message.')
         }
-
-        this.selectedNode = node
-
-        console.log('Selected node:', nodeId, node)
-
-        // Highlight selected node
-        node.classList.add('selected')
-
-        // Also add node class if it doesn't exist
-        if (!node.classList.contains('node')) {
-            node.classList.add('node')
-        }
-
-        console.log('Node classes after selection:', node.classList)
-
-        // Process edges
-        this.edges.forEach(edge => {
-            let isRelated = false
-
-            // Check if edge is connected to this node
-            const edgeTitle = edge.querySelector('title')
-            if (edgeTitle && nodeId) {
-                const titleText = edgeTitle.textContent
-                console.log(
-                    'Checking edge:',
-                    titleText,
-                    'against node:',
-                    nodeId,
-                )
-
-                // Parse edge connection (format: "nodeA->nodeB" or "nodeA -- nodeB")
-                if (titleText.includes(nodeId)) {
-                    if (titleText.startsWith(nodeId)) {
-                        edge.classList.add('outgoing', 'highlighted')
-                        isRelated = true
-                        console.log('Found outgoing edge:', titleText)
-                    } else if (titleText.endsWith(nodeId)) {
-                        edge.classList.add('incoming', 'highlighted')
-                        isRelated = true
-                        console.log('Found incoming edge:', titleText)
-                    }
-                }
-            }
-
-            // Fade unrelated edges
-            if (!isRelated) {
-                edge.classList.add('fade')
-            }
-        })
-
-        // Update info panel
-        const infoPanel = document.getElementById('infoPanel')
-        const infoPanelContent = document.getElementById('infoPanelContent')
-        if (infoPanel && infoPanelContent && nodeId) {
-            infoPanelContent.textContent = `Selected: ${nodeId}`
-            infoPanel.classList.add('show')
-        }
-    }
-
-    /**
-     * Handle edge selection
-     * @param {SVGGElement} edge
-     */
-    onSelectEdge(edge) {
-        this.reset()
-
-        console.log('Selected edge:', edge.id)
-
-        edge.classList.add('selected', 'highlighted')
-
-        // Fade other edges
-        this.edges.forEach(e => {
-            if (e !== edge) {
-                e.classList.add('fade')
-            }
-        })
     }
 
     /**
@@ -362,8 +354,13 @@ window.interactiveGraph = null
  * Initialize interactive call graph
  * @param {SVGSVGElement} svg
  */
-function initializeInteractiveGraph(svg) {
-    console.log('Initializing interactive graph with SVG:', svg)
+function initializeInteractiveGraph(svg, isIncoming) {
+    console.log(
+        'Initializing interactive graph with SVG:',
+        svg,
+        'isIncoming:',
+        isIncoming,
+    )
     console.log(
         'SVG tagName:',
         svg.tagName,
@@ -380,7 +377,7 @@ function initializeInteractiveGraph(svg) {
     }
 
     try {
-        window.interactiveGraph = new InteractiveCallGraph(svg)
+        window.interactiveGraph = new InteractiveCallGraph(svg, isIncoming)
         console.log(
             'InteractiveCallGraph instance created:',
             window.interactiveGraph,

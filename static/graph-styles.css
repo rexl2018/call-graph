@@ -51,6 +51,29 @@ svg .node.selected > rect {
     fill: var(--node-selected-color) !important;
 }
 
+svg .node.highlighted > polygon,
+svg .node.highlighted > ellipse,
+svg .node.highlighted > path,
+svg .node.highlighted > rect {
+    stroke: var(--node-border-selected-color) !important;
+    stroke-width: 3px !important;
+}
+
+svg .cluster > polygon,
+svg .cluster > ellipse,
+svg .cluster > path,
+svg .cluster > rect {
+    transition: all 0.2s ease;
+}
+
+svg .cluster.highlighted > polygon,
+svg .cluster.highlighted > ellipse,
+svg .cluster.highlighted > path,
+svg .cluster.highlighted > rect {
+    stroke: var(--node-border-selected-color) !important;
+    stroke-width: 3px !important;
+}
+
 svg .node.selected text {
     font-weight: bold !important;
     fill: var(--node-text-color) !important;
