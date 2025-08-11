@@ -1,8 +1,13 @@
 import { CallHierarchyNode } from './call'
 import * as fs from 'fs'
 import * as vscode from 'vscode'
-import { isDeepStrictEqual } from 'util'
 import { output } from './extension'
+
+// 将映射和计数器移到函数外部，使它们可以在测试用例中共享
+export const fileIdMap = new Map<string, number>()
+export const funcIdMap = new Map<string, number>()
+export let fileCounter = 1
+export let funcCounter = 1
 
 export function generateDot(
     graph: CallHierarchyNode,
@@ -12,73 +17,64 @@ export function generateDot(
 ) {
     const dot = new Graph(isIncoming)
     const root = vscode.workspace.workspaceFolders?.[0].uri.path ?? ''
-    const fileIdMap = new Map<string, number>()
-    const funcIdMap = new Map<string, number>()
-    let fileCounter = 1
-    let funcCounter = 1
+
+    // 仅当没有点击节点时才重置映射和计数器
+    if (!clickedNodeId) {
+        fileIdMap.clear()
+        funcIdMap.clear()
+        fileCounter = 1
+        funcCounter = 1
+    }
 
     dot.addAttr({ rankdir: isIncoming ? 'RL' : 'LR' })
-    const getNode = (n: CallHierarchyNode) => {
-        const filePath = n.item.uri.path
-        const funcName = n.item.name
-        const line = n.item.range.start.line
-        const char = n.item.range.start.character
+    const nodeMap = new Map<string, Node>()
 
+    const getOrCreateNode = (c: CallHierarchyNode): Node => {
+        // Generate a unique key for the node based on its properties
+        const filePath = c.item.uri.path
+        const funcName = c.item.name
+        const line = c.item.range.start.line
+        const char = c.item.range.start.character
         if (!fileIdMap.has(filePath)) {
             fileIdMap.set(filePath, fileCounter++)
         }
         if (!funcIdMap.has(funcName)) {
             funcIdMap.set(funcName, funcCounter++)
         }
-
         const fileId = fileIdMap.get(filePath)
         const funcId = funcIdMap.get(funcName)
-
         const nodeId = `${fileId}_${funcId}_${line}_${char}`
+        const nodeKey = `"${nodeId}"`
 
-        return {
-            name: `"${nodeId}"`, // Use the new ID format
-            attr: { label: n.item.name },
+        // If node already exists, return it
+        if (nodeMap.has(nodeKey)) {
+            return nodeMap.get(nodeKey)!
+        }
+
+        // Otherwise, create a new node
+        const newNode = {
+            name: nodeKey,
+            attr: { label: c.item.name },
             subgraph: {
                 name: String(fileId),
-                attr: { label: n.item.uri.path.replace(root, '${workspace}') },
+                attr: { label: c.item.uri.path.replace(root, '${workspace}') },
             },
             next: [],
         } as Node
-    }
-    const node = getNode(graph)
-    const set = new Set<Node>()
 
-    const insertNode = (n: Node, c: CallHierarchyNode) => {
-        set.add(n)
+        // Add to map before processing children to handle cycles
+        nodeMap.set(nodeKey, newNode)
+
+        // Process children
         for (const child of c.children) {
-            const next = getNode(child)
-            let isSkip = false
-            for (const s of set) {
-                if (isNodeEqual(s, next)) {
-                    if (isIncoming) {
-                        // Reverse edge direction for incoming calls
-                        s.next.push(n)
-                    } else {
-                        n.next.push(s)
-                    }
-                    isSkip = true
-                }
-            }
-            if (isSkip) continue
-            n.next.push(next)
-            insertNode(next, child)
+            newNode.next.push(getOrCreateNode(child))
         }
+
+        return newNode
     }
-    insertNode(node, graph)
-    dot.addNode(node)
-    console.log(
-        `[DEBUG] generateDot: clickedNodeId=${clickedNodeId}, isIncoming=${isIncoming}`,
-    )
-    // 打印当前高亮状态
-    console.log(
-        `[DEBUG] generateDot: 当前高亮状态 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
-    )
+
+    const rootNode = getOrCreateNode(graph)
+    dot.addNode(rootNode)
 
     if (clickedNodeId) {
         // 确保clickedNodeId格式与_nodes中的节点名称格式一致
@@ -90,26 +86,13 @@ export function generateDot(
         output.appendLine(
             `点击的节点ID: ${clickedNodeId}, 格式化后: ${formattedNodeId}`,
         )
-        console.log(
-            `[DEBUG] generateDot: 高亮子图，formattedNodeId=${formattedNodeId}`,
-        )
         dot.highlightSubgraph(formattedNodeId)
-        console.log(
-            `[DEBUG] generateDot: 高亮后 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
-        )
     } else if (clickedNodeId === undefined) {
         // undefined means we should not change the highlight status
         // which is useful for saving the dot file with current highlight
-        console.log(
-            `[DEBUG] generateDot: 保持当前高亮状态 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
-        )
     } else {
         // null or empty string means we should reset the highlight
-        console.log(`[DEBUG] generateDot: 重置高亮状态`)
         dot.resetHighlight()
-        console.log(
-            `[DEBUG] generateDot: 重置后 - 节点数量=${dot.getHighlightedNodesCount()}, 边数量=${dot.getHighlightedEdgesCount()}, 子图数量=${dot.getHighlightedSubgraphsCount()}`,
-        )
     }
     const dotContent = dot.toString()
     fs.writeFileSync(path, dotContent)
@@ -118,14 +101,6 @@ export function generateDot(
     output.appendLine('--- End of DOT file content ---')
     output.appendLine('Generated dot file: ' + path)
     return dot
-}
-
-function isNodeEqual(a: Node, b: Node) {
-    return (
-        a.name === b.name &&
-        isDeepStrictEqual(a.attr, b.attr) &&
-        isDeepStrictEqual(a.subgraph, b.subgraph)
-    )
 }
 
 type Attr = Record<string, string> & {
@@ -170,6 +145,7 @@ class Graph {
     }
     private _title: string
     private _isIncoming: boolean
+    private _rootNodeName: string | null = null
     private _attrs: Attr = {}
     private _nodes = new Map<string, Node>()
     private _edges = new Set<string>()
@@ -193,6 +169,10 @@ class Graph {
 
     addNode(...nodes: Node[]) {
         for (const node of nodes) {
+            // The first node added is considered the root of the entire call graph.
+            if (this._rootNodeName === null) {
+                this._rootNodeName = node.name
+            }
             this.collectNodesAndSubgraphs(node)
         }
         const visited = new Set<string>()
@@ -201,103 +181,71 @@ class Graph {
         }
     }
 
-    highlightSubgraph(startNodeId: string) {
-        // 检查节点是否存在于_nodes集合中
-        if (!this._nodes.has(startNodeId)) {
-            output.appendLine(
-                `警告：找不到节点ID: ${startNodeId}，无法高亮子图`,
-            )
-            output.appendLine(
-                `现有节点列表: ${[...this._nodes.keys()].join(', ')}`,
+    highlightSubgraph(clickedNodeId: string) {
+        this.resetHighlight()
+        if (!this._nodes.has(clickedNodeId) || !this._rootNodeName) {
+            console.error(
+                `[ERROR] Node with ID ${clickedNodeId} or root node not found in graph.`,
             )
             return
         }
 
-        output.appendLine(
-            `开始高亮子图，起始节点ID: ${startNodeId}，图类型: ${this._isIncoming ? 'incoming' : 'outgoing'}`,
-        )
+        const s = this._rootNodeName
+        const t = clickedNodeId
 
-        const nodesToHighlight = new Set<string>()
-        const edgesToHighlight = new Set<string>()
-        const queue: string[] = [startNodeId]
-        const visited = new Set<string>()
-
-        // For incoming, we traverse forwards (adj) to find callees.
-        // For outgoing, we traverse backwards (revAdj) to find callers.
-        // 根据文档规则：
-        // - incoming图：从被点击节点开始，向下游追溯所有被调用者
-        // - outgoing图：从被点击节点开始，向上游追溯所有调用者
-        const adj = this._isIncoming ? this._adj : this._revAdj
-        output.appendLine(
-            `使用${this._isIncoming ? '正向' : '反向'}邻接表进行遍历`,
-        )
-        output.appendLine(
-            `邻接表内容: ${[...adj.entries()].map(([k, v]) => `${k} -> [${[...v].join(', ')}]`).join('\n')}`,
-        )
-
-        while (queue.length > 0) {
-            const currNodeId = queue.shift()!
-            if (visited.has(currNodeId)) {
-                continue
+        const reachableFromS = this._traverse(s, this._adj)
+        const canReachT = this._traverse(t, this._revAdj)
+        const pathNodes = new Set<string>()
+        for (const node of reachableFromS) {
+            if (canReachT.has(node)) {
+                pathNodes.add(node)
             }
-            visited.add(currNodeId)
-            nodesToHighlight.add(currNodeId)
+        }
+        this._highlightedNodes = pathNodes
 
-            const neighbors = adj.get(currNodeId) || new Set()
-            output.appendLine(
-                `处理节点: ${currNodeId}, 找到${neighbors.size}个${this._isIncoming ? '被调用者' : '调用者'}`,
-            )
-
-            for (const neighborId of neighbors) {
-                // 根据文档规则：
-                // - incoming图：从被点击节点开始，向下游追溯所有被调用者
-                // - outgoing图：从被点击节点开始，向上游追溯所有调用者
-                // 对于incoming图，边是从当前节点(caller)到邻居节点(callee)
-                // 对于outgoing图，边是从邻居节点(caller)到当前节点(callee)
-                // 检查节点名称是否已经包含引号，避免重复添加
-                const fromId = this._isIncoming ? currNodeId : neighborId
-                const toId = this._isIncoming ? neighborId : currNodeId
-                // 构造边字符串时添加引号，保持与buildEdges方法中的格式一致
-                const fromStr =
-                    fromId.startsWith('"') && fromId.endsWith('"')
-                        ? fromId
-                        : `"${fromId}"`
-                const toStr =
-                    toId.startsWith('"') && toId.endsWith('"')
-                        ? toId
-                        : `"${toId}"`
-                const edge = `${fromStr} -> ${toStr}`
-                edgesToHighlight.add(edge)
-                output.appendLine(`添加边: ${edge}`)
-
-                if (!visited.has(neighborId)) {
-                    nodesToHighlight.add(neighborId) // Also highlight the neighbor node
-                    queue.push(neighborId)
-                    output.appendLine(`将节点 ${neighborId} 加入队列`)
+        for (const edgeStr of this._edges) {
+            const parts = edgeStr.split(' -> ')
+            const u = parts[0]
+            const v = parts[1]
+            if (
+                this._highlightedNodes.has(u) &&
+                this._highlightedNodes.has(v)
+            ) {
+                if (this._isIncoming) {
+                    this._highlightedEdges.add(`${v} -> ${u}`)
+                } else {
+                    this._highlightedEdges.add(edgeStr)
                 }
             }
         }
 
-        this._highlightedNodes = nodesToHighlight
-        this._highlightedEdges = edgesToHighlight
-
-        output.appendLine(
-            `高亮计算完成，共有${nodesToHighlight.size}个节点和${edgesToHighlight.size}个边被高亮`,
-        )
-        output.appendLine('高亮节点列表:')
-        output.appendLine([...nodesToHighlight].join(', '))
-
         for (const nodeId of this._highlightedNodes) {
-            const subgraph = this._nodeToSubgraphMap.get(nodeId)
-            if (subgraph) {
-                this._highlightedSubgraphs.add(subgraph)
-                output.appendLine(
-                    `节点 ${nodeId} 属于子图 ${subgraph}，将子图添加到高亮列表`,
-                )
+            const subgraphName = this._nodeToSubgraphMap.get(nodeId)
+            if (subgraphName) {
+                this._highlightedSubgraphs.add(subgraphName)
             }
         }
+    }
 
-        output.appendLine(`共有${this._highlightedSubgraphs.size}个子图被高亮`)
+    private _traverse(
+        startNode: string,
+        adj: Map<string, Set<string>>,
+    ): Set<string> {
+        const visited = new Set<string>()
+        const queue: string[] = [startNode]
+        visited.add(startNode)
+
+        while (queue.length > 0) {
+            const u = queue.shift()!
+            const neighbors = adj.get(u) || new Set()
+            for (const v of neighbors) {
+                if (!visited.has(v)) {
+                    visited.add(v)
+                    queue.push(v)
+                }
+            }
+        }
+        return visited
     }
 
     private collectNodesAndSubgraphs(node: Node) {
@@ -330,9 +278,9 @@ class Graph {
         if (!this._adj.has(node.name)) this._adj.set(node.name, new Set())
 
         for (const child of node.next) {
-            const [from, to] = this._isIncoming
-                ? [child.name, node.name]
-                : [node.name, child.name]
+            // Logical edge is always from node to child (caller to callee)
+            const from = node.name // Quoted
+            const to = child.name // Quoted
 
             if (!this._adj.has(from)) this._adj.set(from, new Set())
             if (!this._adj.get(from)!.has(to)) {
@@ -341,14 +289,7 @@ class Graph {
                 if (!this._revAdj.has(to)) this._revAdj.set(to, new Set())
                 this._revAdj.get(to)!.add(from)
 
-                // 检查节点名称是否已经包含引号，避免重复添加
-                const fromStr =
-                    from.startsWith('"') && from.endsWith('"')
-                        ? from
-                        : `"${from}"`
-                const toStr =
-                    to.startsWith('"') && to.endsWith('"') ? to : `"${to}"`
-                const edgeStr = `${fromStr} -> ${toStr}`
+                const edgeStr = `${from} -> ${to}`
                 this._edges.add(edgeStr)
             }
 
@@ -356,129 +297,118 @@ class Graph {
         }
     }
 
-    private getAttr(attr?: Attr, isSelf = false, indent = '') {
+    private getAttr(attr?: Attr) {
         if (!attr || Object.keys(attr).length === 0) return ''
-        if (isSelf) {
-            return (
-                Object.entries(attr)
-                    .map(([k, v]) => `${indent}${k}="${v}";`)
-                    .join('\n') + '\n'
-            )
-        } else {
-            const attrs = Object.entries(attr)
-                .map(([k, v]) => `${k}="${v}"`)
-                .join(', ')
-            return ` [${attrs}]`
-        }
+        const attrs = Object.entries(attr)
+            .map(([k, v]) => `${k}="${v}"`)
+            .join(', ')
+        return ` [${attrs}]`
     }
 
-    toString() {
-        const hasHighlight = this._highlightedNodes.size > 0
-        console.log(
-            `[DEBUG] toString: hasHighlight=${hasHighlight}, highlightedNodes=${this._highlightedNodes.size}, highlightedEdges=${this._highlightedEdges.size}, highlightedSubgraphs=${this._highlightedSubgraphs.size}`,
-        )
+    toString(): string {
+        const isHighlighting = this._highlightedNodes.size > 0
+        return this.render(isHighlighting)
+    }
 
-        // 打印部分高亮节点和边的信息，用于调试
-        if (hasHighlight) {
-            const nodeSample = [...this._highlightedNodes]
-                .slice(0, 3)
-                .join(', ')
-            const edgeSample = [...this._highlightedEdges]
-                .slice(0, 3)
-                .join(', ')
-            console.log(`[DEBUG] toString: 高亮节点示例: ${nodeSample}`)
-            console.log(`[DEBUG] toString: 高亮边示例: ${edgeSample}`)
-        }
-
-        let dot = `digraph "${this._title}" {\n`
-
-        // Graph attributes
-        dot += this.getAttr(this._attrs, true, '    ')
-
-        // Node definitions
-        dot += '\n    // Nodes\n'
-        const nodesToRender = hasHighlight
-            ? [...this._highlightedNodes]
-            : [...this._nodes.keys()]
-        for (const nodeName of nodesToRender) {
-            const node = this._nodes.get(nodeName)
-            if (!node) continue
-
-            const nodeAttr = { ...node.attr }
-            if (this._highlightedNodes.has(node.name)) {
-                nodeAttr.color = 'blue'
-                nodeAttr.penwidth = '3' // 增加高亮节点的边框粗细
-            }
-            dot += `    ${node.name}${this.getAttr(nodeAttr)};\n`
-        }
-
-        // Subgraph definitions
-        dot += '\n    // Subgraphs\n'
-        const subgraphsToRender = hasHighlight
-            ? [...this._highlightedSubgraphs]
-            : [...this._subgraphs.keys()]
-
-        for (const sgName of subgraphsToRender) {
-            const sgData = this._subgraphs.get(sgName)
-            if (!sgData) continue
-
-            const nodesInSubgraph = [...sgData.nodes].filter(nodeName =>
-                hasHighlight ? this._highlightedNodes.has(nodeName) : true,
-            )
-
-            // Only render subgraph if it contains nodes to render
-            if (nodesInSubgraph.length > 0) {
-                dot += `    subgraph "cluster_${sgName}" {\n`
-
-                const graphAttrs: Attr = {}
-                if (sgData.attr?.label) {
-                    graphAttrs.label = sgData.attr.label
-                }
-
-                if (this._highlightedSubgraphs.has(sgName)) {
-                    graphAttrs.color = 'blue'
-                    graphAttrs.penwidth = '3' // 增加高亮子图的边框粗细
-                }
-
-                if (Object.keys(graphAttrs).length > 0) {
-                    dot += `        graph${this.getAttr(graphAttrs)};\n`
-                }
-
-                dot += `        ${nodesInSubgraph.join(' ')};\n`
-                dot += `    }\n`
-            }
-        }
-
-        // Edge definitions
-        dot += '\n    // Edges\n'
-        const edgesToRender = hasHighlight
+    private render(isHighlighting: boolean): string {
+        const nodesToRender = isHighlighting
+            ? this._highlightedNodes
+            : new Set(this._nodes.keys())
+        const edgesToRender = isHighlighting
             ? this._highlightedEdges
             : this._edges
-        console.log(
-            `[DEBUG] toString: 要渲染的边数量=${edgesToRender.size}, 是否只渲染高亮边=${hasHighlight}`,
-        )
+        // When highlighting, we only want to show subgraphs that contain highlighted nodes.
+        const subgraphsToRender = isHighlighting
+            ? this._highlightedSubgraphs
+            : new Set(this._subgraphs.keys())
 
-        let edgeCount = 0
-        for (const edge of edgesToRender) {
-            const edgeAttr: Attr = {}
-            if (this._highlightedEdges.has(edge)) {
-                edgeAttr.color = 'blue'
-                edgeAttr.penwidth = '3' // 增加高亮边的边框粗细
-                console.log(`[DEBUG] toString: 添加高亮边属性 - ${edge}`)
+        const lines: string[] = []
+        lines.push(`digraph "${this._title}" {`)
+
+        // Add graph attributes
+        const graphAttrs = Object.entries(this._attrs)
+            .map(([k, v]) => `${k}="${v}";`)
+            .join(' ')
+        lines.push(`graph [${graphAttrs}];`)
+        lines.push(`node [shape="box", style="rounded"];`)
+
+        const renderedNodes = new Set<string>()
+
+        // Render subgraphs
+        for (const subgraphName of subgraphsToRender) {
+            const subgraph = this._subgraphs.get(subgraphName)
+            if (!subgraph) continue
+
+            lines.push(`subgraph "cluster_${subgraphName}" {`)
+            if (subgraph.attr) {
+                const subgraphAttrs = Object.entries(subgraph.attr)
+                    .map(([k, v]) => `${k}="${v}";`)
+                    .join(' ')
+                lines.push(subgraphAttrs)
             }
-            dot += `    ${edge}${this.getAttr(edgeAttr)};\n`
-            edgeCount++
 
-            // 只打印前几条边的信息，避免日志过多
-            if (edgeCount <= 5) {
-                console.log(
-                    `[DEBUG] toString: 添加边 #${edgeCount} - ${edge}${this.getAttr(edgeAttr)}`,
-                )
+            for (const nodeName of subgraph.nodes) {
+                if (this._highlightedNodes.has(nodeName)) {
+                    const node = this._nodes.get(nodeName)!
+                    const nodeAttrs: Attr = { ...node.attr }
+                    nodeAttrs.color = 'blue'
+                    nodeAttrs.style = 'filled,bold'
+                    nodeAttrs.fillcolor = '#E0E0FF'
+                    lines.push(`${node.name}${this.getAttr(nodeAttrs)};`)
+                    renderedNodes.add(nodeName)
+                }
+            }
+            lines.push('}')
+        }
+
+        // Render nodes not in any rendered subgraph
+        for (const nodeName of nodesToRender) {
+            if (!renderedNodes.has(nodeName)) {
+                const node = this._nodes.get(nodeName)!
+                const nodeAttrs: Attr = { ...node.attr }
+                if (this._highlightedNodes.has(nodeName)) {
+                    nodeAttrs.color = 'blue'
+                    nodeAttrs.style = 'filled,bold'
+                    nodeAttrs.fillcolor = '#E0E0FF'
+                }
+                lines.push(`${nodeName}${this.getAttr(nodeAttrs)};`)
             }
         }
-        console.log(`[DEBUG] toString: 总共添加了 ${edgeCount} 条边`)
 
-        dot += '}\n'
-        return dot
+        // Render edges
+        for (const edge of edgesToRender) {
+            const edgeAttrs: Attr = {}
+            if (this._highlightedEdges.has(edge)) {
+                edgeAttrs.color = 'blue'
+                edgeAttrs['penwidth'] = '2.0'
+            } else {
+                edgeAttrs.color = 'black'
+            }
+            lines.push(`${edge}${this.getAttr(edgeAttrs)};`)
+        }
+
+        lines.push('}')
+        return lines.join('\n')
     }
+}
+
+// 导出一个独立的getNodeId函数，用于测试用例中获取节点ID
+export function getNodeId(n: CallHierarchyNode) {
+    const filePath = n.item.uri.path
+    const funcName = n.item.name
+    const line = n.item.range.start.line
+    const char = n.item.range.start.character
+
+    if (!fileIdMap.has(filePath)) {
+        fileIdMap.set(filePath, fileCounter++)
+    }
+    if (!funcIdMap.has(funcName)) {
+        funcIdMap.set(funcName, funcCounter++)
+    }
+
+    const fileId = fileIdMap.get(filePath)
+    const funcId = funcIdMap.get(funcName)
+
+    const nodeId = `${fileId}_${funcId}_${line}_${char}`
+    return nodeId
 }

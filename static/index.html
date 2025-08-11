@@ -33,6 +33,7 @@
         </div>
         <div class="btn-container">
             <button class="btn" id="downloadDot">save dot file</button>
+            <button class="btn" id="downloadMermaid">save mermaid</button>
             <button class="btn" id="downloadSvg">save as svg</button>
             <button class="btn reset" id="resetSelection">
                 reset selection
@@ -148,6 +149,20 @@
                 vscode.postMessage({
                     command: 'download',
                     type: 'dot',
+                    data: dot,
+                    nodeId: lastClickedNodeId, // 传递当前高亮的节点ID
+                })
+            })
+
+            d3.select('#downloadMermaid').on('click', () => {
+                // 获取当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
+                vscode.postMessage({
+                    command: 'download',
+                    type: 'mermaid',
                     data: dot,
                     nodeId: lastClickedNodeId, // 传递当前高亮的节点ID
                 })

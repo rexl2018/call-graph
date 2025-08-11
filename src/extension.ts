@@ -5,6 +5,7 @@ import {
     getOutgoingCallNode,
 } from './call'
 import { generateDot } from './dot'
+import { generateMermaid } from './mermaid'
 import * as path from 'path'
 import * as fs from 'fs'
 import ignore from 'ignore'
@@ -65,58 +66,39 @@ const onReceiveMsgFactory =
             type === 'Incoming' ? 'call_graph_incoming' : 'call_graph_outgoing'
 
         if (msg.command === 'download' && msg.type && msg.data) {
-            const onDowload = async (fileType: 'dot' | 'svg') => {
+            const onDowload = async (fileType: 'dot' | 'svg' | 'mermaid') => {
                 const workspace = vscode.workspace.workspaceFolders?.[0].uri
                 if (!workspace) return
                 const f = await vscode.window.showSaveDialog({
                     filters:
                         fileType === 'svg'
                             ? { Image: ['svg'] }
-                            : { Graphviz: ['dot', 'gv'] },
+                            : fileType === 'mermaid'
+                              ? { Mermaid: ['mmd', 'md'] }
+                              : { Graphviz: ['dot', 'gv'] },
                     defaultUri: vscode.Uri.joinPath(
                         workspace,
-                        `${savedName}.${fileType}`,
+                        `${savedName}.${fileType === 'mermaid' ? 'mmd' : fileType}`,
                     ),
                 })
                 if (!f) return
 
                 let fileContent = msg.data
                 if (fileType === 'dot' && graph && dotFile) {
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: 保存DOT文件，isIncoming=${isIncoming}`,
-                    )
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: 保存前的DOT文件内容，长度=${fs.existsSync(dotFile.fsPath) ? fs.readFileSync(dotFile.fsPath).toString().length : 0}`,
-                    )
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: 前端传递的高亮节点ID=${msg.nodeId}`,
-                    )
-
                     // Regenerate dot content to respect highlight status
-                    // 使用前端传递的nodeId参数，如果存在的话
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: 调用generateDot生成DOT文件，传入前端的高亮节点ID`,
-                    )
                     generateDot(
                         graph,
                         dotFile.fsPath,
                         isIncoming,
-                        msg.nodeId || undefined, // 使用前端传递的nodeId，如果不存在则使用undefined保持当前状态
+                        msg.nodeId || undefined,
                     )
-
-                    // Read the content from the file, as generateDot already wrote to it
                     fileContent = fs.readFileSync(dotFile.fsPath).toString()
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: 读取DOT文件内容，长度=${fileContent.length}`,
-                    )
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: DOT文件内容前100个字符: ${fileContent.substring(0, 100)}`,
-                    )
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: DOT文件内容是否包含"color"属性: ${fileContent.includes('color="blue"')}`,
-                    )
-                    console.log(
-                        `[DEBUG] onReceiveMsgFactory: DOT文件内容是否包含"penwidth"属性: ${fileContent.includes('penwidth="3"')}`,
+                } else if (fileType === 'mermaid' && graph) {
+                    // Generate Mermaid content directly from the graph data
+                    fileContent = generateMermaid(
+                        graph,
+                        isIncoming,
+                        msg.nodeId || undefined,
                     )
                 }
 
@@ -124,7 +106,7 @@ const onReceiveMsgFactory =
                     fs.writeFileSync(f.fsPath, fileContent)
                 }
                 vscode.window.showInformationMessage(
-                    'Call Graph file saved: ' + f.fsPath,
+                    `Call Graph ${fileType} file saved: ` + f.fsPath,
                 )
             }
             onDowload(msg.type)
@@ -308,53 +290,9 @@ const registerWebviewPanelSerializer = (
                 ],
             }
 
-            // 获取webview资源URI
-            const d3Uri = webviewPanel.webview
-                .asWebviewUri(
-                    vscode.Uri.joinPath(
-                        vscode.Uri.file(staticDir),
-                        'lib/d3/d3.min.js',
-                    ),
-                )
-                .toString()
-            const d3GraphvizUri = webviewPanel.webview
-                .asWebviewUri(
-                    vscode.Uri.joinPath(
-                        vscode.Uri.file(staticDir),
-                        'lib/d3-graphviz/d3-graphviz.min.js',
-                    ),
-                )
-                .toString()
-
-            const graphInteractionUri = webviewPanel.webview
-                .asWebviewUri(
-                    vscode.Uri.joinPath(
-                        vscode.Uri.file(staticDir),
-                        'graph-interaction.js',
-                    ),
-                )
-                .toString()
-            const graphStylesUri = webviewPanel.webview
-                .asWebviewUri(
-                    vscode.Uri.joinPath(
-                        vscode.Uri.file(staticDir),
-                        'graph-styles.css',
-                    ),
-                )
-                .toString()
-
             // This part needs to be adapted to handle the new logic, but for now, we'll keep it simple
             // as deserialization might not be fully compatible with the new interactive features without more state.
             webviewPanel.webview.html = `<body>Restore not fully supported for interactive graphs yet. Please regenerate the graph.</body>`
-            // 注意：这些URI变量在此处未使用，但保留以便将来实现完整的反序列化支持
-            // 当实现完整的反序列化支持时，这些URI将用于重建webview内容
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const _unusedUris = [
-                d3Uri,
-                d3GraphvizUri,
-                graphInteractionUri,
-                graphStylesUri,
-            ]
 
             // Deserialization doesn't have the graph context, so node clicking won't work.
             // We can pass a limited message handler.
@@ -374,7 +312,7 @@ const registerWebviewPanelSerializer = (
     })
 }
 
-export async function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
     // 不需要显式初始化WASM模块，@hpcc-js/wasm会自动加载
 
     const staticDir = path.resolve(context.extensionPath, 'static')
