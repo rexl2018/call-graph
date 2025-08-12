@@ -6,24 +6,44 @@
         <title>Call Graph</title>
         <script src="$D3_URI"></script>
         <script src="$D3_GRAPHVIZ_URI"></script>
-        <script src="$GRAPHVIZLIB_URI"></script>
+        <script src="$GRAPH_INTERACTION_URI"></script>
+        <link rel="stylesheet" href="$GRAPH_STYLES_URI" />
         <script>
-            // 记录资源加载状态
-            console.log('HTML loaded, scripts loading...')
+            // 资源加载状态监控
             window.addEventListener('DOMContentLoaded', () => {
-                console.log('DOM content loaded')
+                // 验证脚本是否加载
+                if (
+                    typeof d3 === 'undefined' ||
+                    typeof window['d3-graphviz'] === 'undefined' ||
+                    typeof window['d3-graphviz'].graphviz === 'undefined' ||
+                    typeof initializeInteractiveGraph === 'undefined'
+                ) {
+                    console.error('必要的脚本未正确加载，请检查资源引用')
+                }
             })
             window.addEventListener('load', () => {
-                console.log('All resources loaded')
+                // 资源加载完成
             })
         </script>
     </head>
 
     <body>
-        <div id="app" style="width: 100%; height: 100vh"></div>
+        <div id="graph-container" style="width: 100%; height: 100vh">
+            <div id="app"></div>
+        </div>
         <div class="btn-container">
             <button class="btn" id="downloadDot">save dot file</button>
+            <button class="btn" id="downloadMermaid">save mermaid</button>
             <button class="btn" id="downloadSvg">save as svg</button>
+            <button class="btn reset" id="resetSelection">
+                reset selection
+            </button>
+        </div>
+        <div class="info-panel" id="infoPanel">
+            <div class="title">Node Information</div>
+            <div class="content" id="infoPanelContent">
+                Click on a node to see details
+            </div>
         </div>
     </body>
     <script>
@@ -37,18 +57,70 @@
                 .attr('viewBox', [0, 0, width, height].join(' '))
         }
 
-        ;(async function () {
-            const vscode = acquireVsCodeApi()
+        document.addEventListener('DOMContentLoaded', async function () {
+            window.vscode = acquireVsCodeApi()
+            const vscode = window.vscode
             // Inject dot file uri: $DOT_FILE_URI
             vscode.setState('$DOT_FILE_URI')
             const dot = await (await fetch('$DOT_FILE_URI')).text()
-            const gv = d3
-                .select('#app')
-                .graphviz()
-                .renderDot(dot, () => {
-                    d3.select(window).on('resize.updatesvg', updateSvgViewBox)
-                    updateSvgViewBox()
+
+            // Ensure #app element exists
+            const appElement = d3.select('#app')
+            console.log('App element:', appElement.node())
+            if (!appElement.node()) {
+                console.error('App element not found!')
+                return
+            }
+
+            let gv
+
+            function onGraphRendered() {
+                d3.select(window).on('resize.updatesvg', updateSvgViewBox)
+                updateSvgViewBox()
+
+                // Initialize interactive functionality
+                const svg = d3.select('#app>svg').node()
+                if (svg && window.initializeInteractiveGraph) {
+                    const isIncoming = '$IS_INCOMING' === 'true'
+                    window.initializeInteractiveGraph(svg, isIncoming)
+
+                    // SVG event binding
+                    svg.addEventListener('click', e => {
+                        // 处理SVG点击事件
+                    })
+                } else {
+                    console.error(
+                        'Failed to initialize interactive graph - SVG:',
+                        !!svg,
+                        'initFunc:',
+                        !!window.initializeInteractiveGraph,
+                    )
+                }
+            }
+
+            function initAndRender(dotContent) {
+                // 保存当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
+                d3.select('#graph-container').html('<div id="app"></div>') // Re-create the app container
+                gv = window['d3-graphviz']
+                    .graphviz('#app')
+                    .transition(() => d3.transition().duration(0))
+                gv.renderDot(dotContent, function () {
+                    onGraphRendered()
+
+                    // 恢复之前保存的高亮节点ID
+                    if (lastClickedNodeId && window.interactiveGraph) {
+                        window.interactiveGraph.lastClickedNodeId =
+                            lastClickedNodeId
+                    }
                 })
+            }
+
+            initAndRender(dot)
+
             d3.select('#downloadSvg').on('click', () => {
                 gv.resetZoom()
                 const svgElement = d3.select('#app>svg')
@@ -69,13 +141,51 @@
                 })
             })
             d3.select('#downloadDot').on('click', () => {
+                // 获取当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
                 vscode.postMessage({
                     command: 'download',
                     type: 'dot',
                     data: dot,
+                    nodeId: lastClickedNodeId, // 传递当前高亮的节点ID
                 })
             })
-        })()
+
+            d3.select('#downloadMermaid').on('click', () => {
+                // 获取当前高亮的节点ID
+                const lastClickedNodeId = window.interactiveGraph
+                    ? window.interactiveGraph.lastClickedNodeId
+                    : null
+
+                vscode.postMessage({
+                    command: 'download',
+                    type: 'mermaid',
+                    data: dot,
+                    nodeId: lastClickedNodeId, // 传递当前高亮的节点ID
+                })
+            })
+
+            // Reset selection button
+            d3.select('#resetSelection').on('click', () => {
+                if (window.interactiveGraph) {
+                    window.interactiveGraph.reset()
+                    d3.select('#infoPanel').classed('show', false)
+                }
+            })
+
+            // Listen for messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data // The JSON data our extension sent
+                switch (message.command) {
+                    case 'updateGraph':
+                        initAndRender(message.dot)
+                        break
+                }
+            })
+        })
     </script>
     <style>
         .btn-container {
@@ -99,6 +209,42 @@
 
         .btn:hover {
             background-color: #0069d9;
+        }
+
+        .btn.reset {
+            background-color: #6c757d;
+        }
+
+        .btn.reset:hover {
+            background-color: #5a6268;
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .info-panel.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .info-panel .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .info-panel .content {
+            font-size: 14px;
         }
     </style>
 </html>

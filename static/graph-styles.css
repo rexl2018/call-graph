@@ -1,0 +1,264 @@
+/* Interactive Call Graph Styles */
+/* Based on crabviz implementation with blue highlight theme */
+
+/* SVG container */
+#app {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Ensure SVG can receive pointer events */
+#app > svg {
+    pointer-events: all;
+}
+
+:root {
+    --edge-color: #666;
+    --edge-hover-color: #333;
+    --edge-selected-color: #2196F3; /* Blue for selected */
+    --edge-highlighted-color: #2196F3; /* Blue for highlighted */
+    --edge-incoming-color: #4CAF50; /* Green for incoming */
+    --edge-outgoing-color: #FF9800; /* Orange for outgoing */
+    
+    --node-color: #f9f9f9;
+    --node-selected-color: #E3F2FD; /* Light blue background */
+    --node-border-selected-color: #2196F3; /* Blue border */
+    --node-text-color: #333;
+}
+
+/* Node styles */
+.node {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.node:hover {
+    opacity: 0.8;
+}
+
+.node.selected {
+    filter: drop-shadow(0 0 8px rgba(33, 150, 243, 0.5));
+}
+
+/* More specific selectors for SVG elements */
+svg .node.selected > polygon,
+svg .node.selected > ellipse,
+svg .node.selected > path,
+svg .node.selected > rect {
+    stroke: var(--node-border-selected-color) !important;
+    stroke-width: 3px !important;
+    fill: var(--node-selected-color) !important;
+}
+
+svg .node.highlighted > polygon,
+svg .node.highlighted > ellipse,
+svg .node.highlighted > path,
+svg .node.highlighted > rect {
+    stroke: var(--node-border-selected-color) !important;
+    stroke-width: 3px !important;
+}
+
+svg .cluster > polygon,
+svg .cluster > ellipse,
+svg .cluster > path,
+svg .cluster > rect {
+    transition: all 0.2s ease;
+}
+
+svg .cluster.highlighted > polygon,
+svg .cluster.highlighted > ellipse,
+svg .cluster.highlighted > path,
+svg .cluster.highlighted > rect {
+    stroke: var(--node-border-selected-color) !important;
+    stroke-width: 3px !important;
+}
+
+svg .node.selected text {
+    font-weight: bold !important;
+    fill: var(--node-text-color) !important;
+}
+
+/* Additional fallback for graphviz generated elements */
+g.node.selected > polygon,
+g.node.selected > ellipse,
+g.node.selected > path,
+g.node.selected > rect {
+    stroke: #2196F3 !important;
+    stroke-width: 3px !important;
+    fill: #E3F2FD !important;
+}
+
+g.node.selected text {
+    font-weight: bold !important;
+    fill: #333 !important;
+}
+
+/* Edge styles */
+.edge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edge:hover {
+    opacity: 0.8;
+}
+
+.edge > path {
+    stroke: var(--edge-color);
+    stroke-width: 1.5px;
+    transition: all 0.2s ease;
+}
+
+.edge > polygon {
+    stroke: var(--edge-color);
+    fill: var(--edge-color);
+    transition: all 0.2s ease;
+}
+
+/* Hover path for better click area */
+.edge > path.hover-path {
+    stroke: transparent;
+    stroke-width: 10px;
+    fill: none;
+    pointer-events: stroke;
+}
+
+/* Selected edge */
+.edge.selected > path:not(.hover-path) {
+    stroke: var(--edge-selected-color) !important;
+    stroke-width: 3px !important;
+}
+
+.edge.selected > polygon {
+    stroke: var(--edge-selected-color) !important;
+    fill: var(--edge-selected-color) !important;
+}
+
+/* Highlighted edges (connected to selected node) */
+.edge.highlighted > path:not(.hover-path) {
+    stroke: var(--edge-highlighted-color) !important;
+    stroke-width: 2.5px !important;
+}
+
+.edge.highlighted > polygon {
+    stroke: var(--edge-highlighted-color) !important;
+    fill: var(--edge-highlighted-color) !important;
+}
+
+/* Incoming edges */
+.edge.incoming > path:not(.hover-path) {
+    stroke: var(--edge-incoming-color) !important;
+    stroke-width: 2.5px !important;
+}
+
+.edge.incoming > polygon {
+    stroke: var(--edge-incoming-color) !important;
+    fill: var(--edge-incoming-color) !important;
+}
+
+/* Outgoing edges */
+.edge.outgoing > path:not(.hover-path) {
+    stroke: var(--edge-outgoing-color) !important;
+    stroke-width: 2.5px !important;
+}
+
+.edge.outgoing > polygon {
+    stroke: var(--edge-outgoing-color) !important;
+    fill: var(--edge-outgoing-color) !important;
+}
+
+/* Faded elements */
+.fade {
+    opacity: 0.1 !important;
+    transition: opacity 0.3s ease;
+}
+
+/* Button styles */
+.btn-container {
+    position: fixed;
+    bottom: 8px;
+    left: 8px;
+    z-index: 1000;
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    color: #fff;
+    text-align: center;
+    border: 1px solid transparent;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    background-color: #007bff;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.btn:active {
+    background-color: #004085;
+}
+
+/* Reset button */
+.btn.reset {
+    background-color: #6c757d;
+}
+
+.btn.reset:hover {
+    background-color: #545b62;
+}
+
+/* Info panel */
+.info-panel {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    color: #333;
+    max-width: 300px;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.info-panel.show {
+    display: block;
+}
+
+.info-panel .title {
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #2196F3;
+}
+
+.info-panel .content {
+    line-height: 1.4;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --edge-color: #999;
+        --edge-hover-color: #ccc;
+        --node-color: #2d2d2d;
+        --node-selected-color: #1a237e;
+        --node-text-color: #fff;
+    }
+    
+    .info-panel {
+        background: rgba(45, 45, 45, 0.95);
+        border-color: #555;
+        color: #fff;
+    }
+}

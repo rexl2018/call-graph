@@ -1,0 +1,918 @@
+
+> call-graph@3.2.3 pretest
+> pnpm run compile && pnpm run lint
+
+
+> call-graph@3.2.3 compile /Users/bytedance/work/tools/git/call-graph
+> pnpm run check-types && node esbuild.mjs
+
+
+> call-graph@3.2.3 check-types /Users/bytedance/work/tools/git/call-graph
+> tsc --noEmit
+
+[watch] build started
+[watch] build finished
+[watch] build started
+[watch] build finished
+
+> call-graph@3.2.3 lint /Users/bytedance/work/tools/git/call-graph
+> eslint src
+
+
+> call-graph@3.2.3 test
+> pnpm run compile && node ./out/test/runTest.js --grep dot.test
+
+
+> call-graph@3.2.3 compile /Users/bytedance/work/tools/git/call-graph
+> pnpm run check-types && node esbuild.mjs
+
+
+> call-graph@3.2.3 check-types /Users/bytedance/work/tools/git/call-graph
+> tsc --noEmit
+
+[watch] build started
+[watch] build finished
+[watch] build started
+[watch] build finished
+Searching for test files in /Users/bytedance/work/tools/git/call-graph/out/test/suite
+Found test files: [ 'mermaid.test.js', 'dot.test.js' ]
+Files to run: [ 'mermaid.test.js', 'dot.test.js' ]
+Adding file to mocha: /Users/bytedance/work/tools/git/call-graph/out/test/suite/mermaid.test.js
+Adding file to mocha: /Users/bytedance/work/tools/git/call-graph/out/test/suite/dot.test.js
+Running tests...
+
+[0m[0m
+[0m  generateMermaid[0m
+[Mermaid] generateMermaid: isIncoming=true, clickedNodeId=2_2_2_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=1
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 3_3_3_1 (B --> C)
+[Mermaid] buildGraph: Processing node C (3_3_3_1)
+[Mermaid] buildGraph: Added node 3_3_3_1 with label C
+[Mermaid] buildGraph: Created subgraph subgraph_3 for file testC.ts
+[Mermaid] Graph build finished. Found 3 nodes and 2 edges.
+[Mermaid] Highlighting with clickedNodeId: 2_2_2_1, isIncoming: true
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] generateMermaid: Highlighted edge: 1_1_1_1 --> 2_2_2_1
+[Mermaid] Final mermaid content:
+graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+
+Incoming Mermaid (full content):
+ graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+
+Node IDs and labels:
+A: 1_1_1_1
+B: 2_2_2_1
+C: 3_3_3_1
+Contains node A: true
+Contains node B: true
+Contains edge B to A: false
+Contains edge A to B: true
+Contains node C: false
+Mermaid content lines:
+Line 1: graph TD
+Line 2:   subgraph subgraph_2["testB.ts"]
+Line 3:     2_2_2_1
+Line 4:   end
+Line 5:   subgraph subgraph_1["testA.ts"]
+Line 6:     1_1_1_1
+Line 7:   end
+Line 8:   1_1_1_1 --> 2_2_2_1
+Line 9: 
+Extracting all node IDs and edges from Incoming Mermaid:
+All node IDs: [ '2_2_2_1', '1_1_1_1', '1_1_1_1', '2_2_2_1' ]
+All edges: [ '1_1_1_1 --> 2_2_2_1' ]
+[Mermaid] generateMermaid: isIncoming=false, clickedNodeId=2_2_2_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=1
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 3_3_3_1 (B --> C)
+[Mermaid] buildGraph: Processing node C (3_3_3_1)
+[Mermaid] buildGraph: Added node 3_3_3_1 with label C
+[Mermaid] buildGraph: Created subgraph subgraph_3 for file testC.ts
+[Mermaid] Graph build finished. Found 3 nodes and 2 edges.
+[Mermaid] Highlighting with clickedNodeId: 2_2_2_1, isIncoming: false
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] generateMermaid: Highlighted edge: 2_2_2_1 --> 3_3_3_1
+[Mermaid] Final mermaid content:
+graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_3["testC.ts"]
+    3_3_3_1
+  end
+  2_2_2_1 --> 3_3_3_1
+
+Outgoing Mermaid (full content):
+ graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_3["testC.ts"]
+    3_3_3_1
+  end
+  2_2_2_1 --> 3_3_3_1
+
+Outgoing - Contains node A: false
+Outgoing - Contains node B: true
+Outgoing - Contains edge A to B: false
+Outgoing - Contains edge B to A: false
+Outgoing - Contains node C: true
+Outgoing Mermaid content lines:
+Line 1: graph TD
+Line 2:   subgraph subgraph_2["testB.ts"]
+Line 3:     2_2_2_1
+Line 4:   end
+Line 5:   subgraph subgraph_3["testC.ts"]
+Line 6:     3_3_3_1
+Line 7:   end
+Line 8:   2_2_2_1 --> 3_3_3_1
+Line 9: 
+Extracting all node IDs and edges from Outgoing Mermaid:
+All node IDs: [ '2_2_2_1', '3_3_3_1', '2_2_2_1', '3_3_3_1' ]
+All edges: [ '2_2_2_1 --> 3_3_3_1' ]
+  [31m  1) should generate Mermaid string for a simple 3-node graph[0m
+[Mermaid] generateMermaid: isIncoming=true, clickedNodeId=2_2_2_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=1
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 3_3_3_1 (B --> C)
+[Mermaid] buildGraph: Processing node C (3_3_3_1)
+[Mermaid] buildGraph: Added node 3_3_3_1 with label C
+[Mermaid] buildGraph: Created subgraph subgraph_3 for file testC.ts
+[Mermaid] buildGraph: Adding edge 3_3_3_1 --> 1_1_1_1 (C --> A)
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Node 1_1_1_1 already processed, skipping.
+[Mermaid] Graph build finished. Found 3 nodes and 3 edges.
+[Mermaid] Highlighting with clickedNodeId: 2_2_2_1, isIncoming: true
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] generateMermaid: Highlighted edge: 1_1_1_1 --> 2_2_2_1
+[Mermaid] Final mermaid content:
+graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+
+Circular Incoming Mermaid (full content):
+ graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+
+Extracting all node IDs and edges from Circular Incoming Mermaid:
+All node IDs: [ '2_2_2_1', '1_1_1_1', '1_1_1_1', '2_2_2_1' ]
+All edges: [ '1_1_1_1 --> 2_2_2_1' ]
+  [31m  2) should handle circular references correctly[0m
+[Mermaid] generateMermaid: isIncoming=true, clickedNodeId=2_2_2_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=1
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 2_2_2_1 (B --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Node 2_2_2_1 already processed, skipping.
+[Mermaid] Graph build finished. Found 2 nodes and 2 edges.
+[Mermaid] Highlighting with clickedNodeId: 2_2_2_1, isIncoming: true
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] generateMermaid: Highlighted edge: 1_1_1_1 --> 2_2_2_1
+[Mermaid] generateMermaid: Highlighted edge: 2_2_2_1 --> 2_2_2_1
+[Mermaid] Final mermaid content:
+graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+  2_2_2_1 --> 2_2_2_1
+
+Self-ref Incoming Mermaid (full content):
+ graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  subgraph subgraph_1["testA.ts"]
+    1_1_1_1
+  end
+  1_1_1_1 --> 2_2_2_1
+  2_2_2_1 --> 2_2_2_1
+
+Extracting all node IDs and edges from Self-ref Incoming Mermaid:
+All node IDs: [ '2_2_2_1', '1_1_1_1', '1_1_1_1', '2_2_2_1', '2_2_2_1', '2_2_2_1' ]
+All edges: [ '1_1_1_1 --> 2_2_2_1', '2_2_2_1 --> 2_2_2_1' ]
+Contains self-reference edge: true
+[Mermaid] generateMermaid: isIncoming=false, clickedNodeId=2_2_2_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=1
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 2_2_2_1 (B --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Node 2_2_2_1 already processed, skipping.
+[Mermaid] Graph build finished. Found 2 nodes and 2 edges.
+[Mermaid] Highlighting with clickedNodeId: 2_2_2_1, isIncoming: false
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] generateMermaid: Highlighted edge: 2_2_2_1 --> 2_2_2_1
+[Mermaid] Final mermaid content:
+graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  2_2_2_1 --> 2_2_2_1
+
+Self-ref Outgoing Mermaid (full content):
+ graph TD
+  subgraph subgraph_2["testB.ts"]
+    2_2_2_1
+  end
+  2_2_2_1 --> 2_2_2_1
+
+Extracting all node IDs and edges from Self-ref Outgoing Mermaid:
+All node IDs: [ '2_2_2_1', '2_2_2_1', '2_2_2_1' ]
+All edges: [ '2_2_2_1 --> 2_2_2_1' ]
+  [31m  3) should handle self-referencing nodes correctly[0m
+Complex pattern - Node IDs:
+A: 1_1_1_1
+B: 2_2_2_1
+C: 3_3_3_1
+D: 4_4_4_1
+E: 5_5_5_1
+F: 6_6_6_1
+[Mermaid] generateMermaid: isIncoming=true, clickedNodeId=5_5_5_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=2
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 3_3_3_1 (B --> C)
+[Mermaid] buildGraph: Processing node C (3_3_3_1)
+[Mermaid] buildGraph: Added node 3_3_3_1 with label C
+[Mermaid] buildGraph: Created subgraph subgraph_3 for file testC.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 4_4_5_1 (B --> E)
+[Mermaid] buildGraph: Processing node E (4_4_5_1)
+[Mermaid] buildGraph: Added node 4_4_5_1 with label E
+[Mermaid] buildGraph: Created subgraph subgraph_4 for file testE.ts
+[Mermaid] buildGraph: Adding edge 4_4_5_1 --> 5_5_6_1 (E --> F)
+[Mermaid] buildGraph: Processing node F (5_5_6_1)
+[Mermaid] buildGraph: Added node 5_5_6_1 with label F
+[Mermaid] buildGraph: Created subgraph subgraph_5 for file testF.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 6_6_4_1 (A --> D)
+[Mermaid] buildGraph: Processing node D (6_6_4_1)
+[Mermaid] buildGraph: Added node 6_6_4_1 with label D
+[Mermaid] buildGraph: Created subgraph subgraph_6 for file testD.ts
+[Mermaid] buildGraph: Adding edge 6_6_4_1 --> 4_4_5_1 (D --> E)
+[Mermaid] buildGraph: Processing node E (4_4_5_1)
+[Mermaid] buildGraph: Node 4_4_5_1 already processed, skipping.
+[Mermaid] Graph build finished. Found 6 nodes and 6 edges.
+[Mermaid] Highlighting with clickedNodeId: 5_5_5_1, isIncoming: true
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] Final mermaid content:
+graph TD
+
+Complex Incoming Mermaid (full content):
+ graph TD
+
+Extracting all node IDs and edges from Complex Incoming Mermaid:
+All node IDs: []
+All edges: []
+  [31m  4) should handle complex multi-level call hierarchies[0m
+Diamond pattern - Node IDs:
+A: 1_1_1_1
+B: 2_2_2_1
+C: 3_3_3_1
+D: 4_4_4_1
+[Mermaid] generateMermaid: isIncoming=true, clickedNodeId=4_4_4_1
+[Mermaid] generateMermaid: 开始构建图，根节点名称=A，子节点数量=2
+[Mermaid] generateMermaid: 第一个子节点名称=B
+[Mermaid] Starting graph build...
+[Mermaid] buildGraph: Processing node A (1_1_1_1)
+[Mermaid] buildGraph: Added node 1_1_1_1 with label A
+[Mermaid] buildGraph: Created subgraph subgraph_1 for file testA.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 2_2_2_1 (A --> B)
+[Mermaid] buildGraph: Processing node B (2_2_2_1)
+[Mermaid] buildGraph: Added node 2_2_2_1 with label B
+[Mermaid] buildGraph: Created subgraph subgraph_2 for file testB.ts
+[Mermaid] buildGraph: Adding edge 2_2_2_1 --> 3_3_4_1 (B --> D)
+[Mermaid] buildGraph: Processing node D (3_3_4_1)
+[Mermaid] buildGraph: Added node 3_3_4_1 with label D
+[Mermaid] buildGraph: Created subgraph subgraph_3 for file testD.ts
+[Mermaid] buildGraph: Adding edge 1_1_1_1 --> 4_4_3_1 (A --> C)
+[Mermaid] buildGraph: Processing node C (4_4_3_1)
+[Mermaid] buildGraph: Added node 4_4_3_1 with label C
+[Mermaid] buildGraph: Created subgraph subgraph_4 for file testC.ts
+[Mermaid] buildGraph: Adding edge 4_4_3_1 --> 3_3_4_1 (C --> D)
+[Mermaid] buildGraph: Processing node D (3_3_4_1)
+[Mermaid] buildGraph: Node 3_3_4_1 already processed, skipping.
+[Mermaid] Graph build finished. Found 4 nodes and 4 edges.
+[Mermaid] Highlighting with clickedNodeId: 4_4_4_1, isIncoming: true
+[Mermaid] generateMermaid: Highlighted edges after highlightGraph:
+[Mermaid] Final mermaid content:
+graph TD
+
+Diamond Incoming Mermaid (full content):
+ graph TD
+
+Extracting all node IDs and edges from Diamond Incoming Mermaid:
+All node IDs: []
+All edges: []
+  [31m  5) should handle diamond pattern call hierarchies[0m
+
+[0m  generateDot[0m
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=true
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=1, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/incoming.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"' ]
+Incoming DOT: digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+节点ID列表: [ '"1_1_2_1"', '"2_2_1_1"', '"2_2_1_1"', '"1_1_2_1"' ]
+边列表: [ '"2_2_1_1" -> "1_1_2_1"' ]
+是否有B到A的边: false
+是否包含节点C: false
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=false
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=1, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "3_3_3_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "3_3_3_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/outgoing.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "3_3_3_1"' ]
+Outgoing DOT: digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "3_3_3_1" [color="blue", penwidth="2.0"];
+}
+Outgoing节点ID列表: [ '"1_1_2_1"', '"3_3_3_1"', '"1_1_2_1"', '"3_3_3_1"' ]
+Outgoing边列表: [ '"1_1_2_1" -> "3_3_3_1"' ]
+是否有A到B的边: false
+是否包含节点C: true
+  [31m  6) should generate DOT string for a simple 3-node graph[0m
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=true
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=1, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/circular_incoming.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"' ]
+Circular Incoming DOT: digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+Circular Incoming节点ID列表: [ '"1_1_2_1"', '"2_2_1_1"', '"2_2_1_1"', '"1_1_2_1"' ]
+Circular Incoming边列表: [ '"2_2_1_1" -> "1_1_2_1"' ]
+是否有B到A的边: false
+是否包含节点C: false
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=false
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=1, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "3_3_3_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "3_3_3_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/circular_outgoing.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "3_3_3_1"' ]
+Circular Outgoing DOT: digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "3_3_3_1" [color="blue", penwidth="2.0"];
+}
+Circular Outgoing节点ID列表: [ '"1_1_2_1"', '"3_3_3_1"', '"1_1_2_1"', '"3_3_3_1"' ]
+Circular Outgoing边列表: [ '"1_1_2_1" -> "3_3_3_1"' ]
+是否有A到B的边: false
+是否包含节点C: true
+  [32m  ✔[0m[90m should handle circular references correctly[0m
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=true
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=2, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"', '"1_1_2_1" -> "1_1_2_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+"1_1_2_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/self_ref_incoming.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"', '"2_2_1_1"' ]
+[DEBUG] Highlighted Edges: [ '"2_2_1_1" -> "1_1_2_1"', '"1_1_2_1" -> "1_1_2_1"' ]
+Self-ref Incoming DOT: digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_2" {
+label="testA.ts";
+"2_2_1_1" [label="A", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"2_2_1_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+"1_1_2_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+Self-ref Incoming节点ID列表: [
+  '"1_1_2_1"',
+  '"2_2_1_1"',
+  '"2_2_1_1"',
+  '"1_1_2_1"',
+  '"1_1_2_1"',
+  '"1_1_2_1"'
+]
+Self-ref Incoming边列表: [ '"2_2_1_1" -> "1_1_2_1"', '"1_1_2_1" -> "1_1_2_1"' ]
+是否有B到A的边: false
+[DEBUG] generateDot: clickedNodeId="1_1_2_1", isIncoming=false
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "1_1_2_1", 格式化后: "1_1_2_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="1_1_2_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=1, 边数量=1, 子图数量=1
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "1_1_2_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/self_ref_outgoing.dot
+[DEBUG] Highlighted Nodes: [ '"1_1_2_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "1_1_2_1"' ]
+Self-ref Outgoing DOT: digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "1_1_2_1" [color="blue", penwidth="2.0"];
+}
+Self-ref Outgoing节点ID列表: [ '"1_1_2_1"', '"1_1_2_1"', '"1_1_2_1"' ]
+Self-ref Outgoing边列表: [ '"1_1_2_1" -> "1_1_2_1"' ]
+是否有A到B的边: false
+  [32m  ✔[0m[90m should handle self-referencing nodes correctly[0m
+[DEBUG] generateDot: clickedNodeId="4_4_5_1", isIncoming=true
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "4_4_5_1", 格式化后: "4_4_5_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="4_4_5_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=3, 边数量=2, 子图数量=3
+[DEBUG] Highlighted Nodes: [ '"4_4_5_1"', '"1_1_2_1"', '"6_6_4_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "4_4_5_1"', '"6_6_4_1" -> "4_4_5_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_4" {
+label="testE.ts";
+"4_4_5_1" [label="E", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "4_4_5_1" [color="blue", penwidth="2.0"];
+"6_6_4_1" -> "4_4_5_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/complex_incoming.dot
+[DEBUG] Highlighted Nodes: [ '"4_4_5_1"', '"1_1_2_1"', '"6_6_4_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "4_4_5_1"', '"6_6_4_1" -> "4_4_5_1"' ]
+Complex Incoming DOT: digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_4" {
+label="testE.ts";
+"4_4_5_1" [label="E", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "4_4_5_1" [color="blue", penwidth="2.0"];
+"6_6_4_1" -> "4_4_5_1" [color="blue", penwidth="2.0"];
+}
+Complex Incoming节点ID列表: [
+  '"4_4_5_1"',
+  '"1_1_2_1"',
+  '"6_6_4_1"',
+  '"1_1_2_1"',
+  '"4_4_5_1"',
+  '"6_6_4_1"',
+  '"4_4_5_1"'
+]
+Complex Incoming边列表: [ '"1_1_2_1" -> "4_4_5_1"', '"6_6_4_1" -> "4_4_5_1"' ]
+是否包含节点B: true
+是否包含节点D: true
+是否包含节点E: true
+是否有B到E的边: true
+是否有D到E的边: true
+是否包含节点F: false
+[DEBUG] generateDot: clickedNodeId="4_4_5_1", isIncoming=false
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "4_4_5_1", 格式化后: "4_4_5_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="4_4_5_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=2, 边数量=1, 子图数量=2
+[DEBUG] Highlighted Nodes: [ '"4_4_5_1"', '"5_5_6_1"' ]
+[DEBUG] Highlighted Edges: [ '"4_4_5_1" -> "5_5_6_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_4" {
+label="testE.ts";
+"4_4_5_1" [label="E", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_5" {
+label="testF.ts";
+"5_5_6_1" [label="F", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"4_4_5_1" -> "5_5_6_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/complex_outgoing.dot
+[DEBUG] Highlighted Nodes: [ '"4_4_5_1"', '"5_5_6_1"' ]
+[DEBUG] Highlighted Edges: [ '"4_4_5_1" -> "5_5_6_1"' ]
+Complex Outgoing DOT: digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_4" {
+label="testE.ts";
+"4_4_5_1" [label="E", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_5" {
+label="testF.ts";
+"5_5_6_1" [label="F", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"4_4_5_1" -> "5_5_6_1" [color="blue", penwidth="2.0"];
+}
+Complex Outgoing节点ID列表: [ '"4_4_5_1"', '"5_5_6_1"', '"4_4_5_1"', '"5_5_6_1"' ]
+Complex Outgoing边列表: [ '"4_4_5_1" -> "5_5_6_1"' ]
+  [32m  ✔[0m[90m should handle complex multi-level call hierarchies[0m
+[DEBUG] generateDot: clickedNodeId="6_6_4_1", isIncoming=true
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "6_6_4_1", 格式化后: "6_6_4_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="6_6_4_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=3, 边数量=2, 子图数量=3
+[DEBUG] Highlighted Nodes: [ '"6_6_4_1"', '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "6_6_4_1"', '"3_3_3_1" -> "6_6_4_1"' ]
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "6_6_4_1" [color="blue", penwidth="2.0"];
+"3_3_3_1" -> "6_6_4_1" [color="blue", penwidth="2.0"];
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/diamond_incoming.dot
+[DEBUG] Highlighted Nodes: [ '"6_6_4_1"', '"1_1_2_1"', '"3_3_3_1"' ]
+[DEBUG] Highlighted Edges: [ '"1_1_2_1" -> "6_6_4_1"', '"3_3_3_1" -> "6_6_4_1"' ]
+Diamond Incoming DOT: digraph "" {
+graph [rankdir="RL";];
+node [shape="box", style="rounded"];
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_1" {
+label="testB.ts";
+"1_1_2_1" [label="B", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+subgraph "cluster_3" {
+label="testC.ts";
+"3_3_3_1" [label="C", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+"1_1_2_1" -> "6_6_4_1" [color="blue", penwidth="2.0"];
+"3_3_3_1" -> "6_6_4_1" [color="blue", penwidth="2.0"];
+}
+Diamond Incoming节点ID列表: [
+  '"6_6_4_1"',
+  '"1_1_2_1"',
+  '"3_3_3_1"',
+  '"1_1_2_1"',
+  '"6_6_4_1"',
+  '"3_3_3_1"',
+  '"6_6_4_1"'
+]
+Diamond Incoming边列表: [ '"1_1_2_1" -> "6_6_4_1"', '"3_3_3_1" -> "6_6_4_1"' ]
+是否包含节点B: true
+是否包含节点C: true
+是否包含节点D: true
+是否有B到D的边: true
+是否有C到D的边: true
+[DEBUG] generateDot: clickedNodeId="6_6_4_1", isIncoming=false
+[DEBUG] generateDot: 当前高亮状态 - 节点数量=0, 边数量=0, 子图数量=0
+[CallGraph] 点击的节点ID: "6_6_4_1", 格式化后: "6_6_4_1"
+[DEBUG] generateDot: 高亮子图，formattedNodeId="6_6_4_1"
+[DEBUG] generateDot: 高亮后 - 节点数量=1, 边数量=0, 子图数量=1
+[DEBUG] Highlighted Nodes: [ '"6_6_4_1"' ]
+[DEBUG] Highlighted Edges: []
+[CallGraph] --- Start of DOT file content ---
+[CallGraph] digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+}
+[CallGraph] --- End of DOT file content ---
+[CallGraph] Generated dot file: /tmp/diamond_outgoing.dot
+[DEBUG] Highlighted Nodes: [ '"6_6_4_1"' ]
+[DEBUG] Highlighted Edges: []
+Diamond Outgoing DOT: digraph "" {
+graph [rankdir="LR";];
+node [shape="box", style="rounded"];
+subgraph "cluster_6" {
+label="testD.ts";
+"6_6_4_1" [label="D", color="blue", style="filled,bold", fillcolor="#E0E0FF"];
+}
+}
+Diamond Outgoing节点ID列表: [ '"6_6_4_1"' ]
+Diamond Outgoing边列表: []
+是否有B到D的边: false
+是否有C到D的边: false
+  [32m  ✔[0m[90m should handle diamond pattern call hierarchies[0m
+
+
+[92m [0m[32m 4 passing[0m[90m (10ms)[0m
+[31m  6 failing[0m
+
+[0m  1) generateMermaid
+       should generate Mermaid string for a simple 3-node graph:
+
+      [31mAssertionError [ERR_ASSERTION]: Outgoing: A --> B[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/mermaid.test.js:265:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+[0m  2) generateMermaid
+       should handle circular references correctly:
+
+      [31mAssertionError [ERR_ASSERTION]: Circular Incoming: Should include C[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/mermaid.test.js:290:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+[0m  3) generateMermaid
+       should handle self-referencing nodes correctly:
+
+      [31mAssertionError [ERR_ASSERTION]: Self-ref Outgoing: A --> B[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/mermaid.test.js:328:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+[0m  4) generateMermaid
+       should handle complex multi-level call hierarchies:
+
+      [31mAssertionError [ERR_ASSERTION]: Complex Incoming: Should include E[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/mermaid.test.js:368:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+[0m  5) generateMermaid
+       should handle diamond pattern call hierarchies:
+
+      [31mAssertionError [ERR_ASSERTION]: Diamond Incoming: Should include D[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/mermaid.test.js:416:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+[0m  6) generateDot
+       should generate DOT string for a simple 3-node graph:
+
+      [31mAssertionError [ERR_ASSERTION]: Outgoing: Should not include C[0m
+      [32m+ expected[0m [31m- actual[0m
+
+      [31m-false[0m
+      [32m+true[0m
+      [0m[90m
+      at Context.<anonymous> (out/test/suite/dot.test.js:771:12)
+      at process.processImmediate (node:internal/timers:511:21)
+[0m
+
+
+6 tests failed.

@@ -9,7 +9,10 @@ if (typeof d3 !== 'undefined') {
 }
 
 // 检查d3-graphviz是否加载
-if (typeof d3.graphviz === 'function') {
+if (
+    typeof window['d3-graphviz'] !== 'undefined' &&
+    typeof window['d3-graphviz'].graphviz === 'function'
+) {
     console.log('d3-graphviz loaded successfully')
 } else {
     console.error('d3-graphviz failed to load')

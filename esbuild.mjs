@@ -5,30 +5,7 @@ import console from 'console'
 const production = process.argv.includes('--production')
 const watch = process.argv.includes('--watch')
 
-async function main() {
-    const ctx = await esbuild.context({
-        entryPoints: ['src/extension.ts'],
-        bundle: true,
-        format: 'cjs',
-        minify: production,
-        sourcemap: !production,
-        sourcesContent: false,
-        platform: 'node',
-        outfile: 'out/extension.js',
-        external: ['vscode'],
-        logLevel: 'silent',
-        plugins: [
-            /* add to the end of plugins array */
-            esbuildProblemMatcherPlugin,
-        ],
-    })
-    if (watch) {
-        await ctx.watch()
-    } else {
-        await ctx.rebuild()
-        await ctx.dispose()
-    }
-}
+
 
 /**
  * @type {import('esbuild').Plugin}
@@ -50,6 +27,49 @@ const esbuildProblemMatcherPlugin = {
             console.log('[watch] build finished')
         })
     },
+}
+
+const extensionConfig = {
+    entryPoints: ['src/extension.ts'],
+    bundle: true,
+    format: 'cjs',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: 'node',
+    outfile: 'out/extension.js',
+    external: ['vscode'],
+    logLevel: 'silent',
+    plugins: [esbuildProblemMatcherPlugin],
+};
+
+const testConfig = {
+    entryPoints: ['test/runTest.ts', 'test/suite/index.ts', 'test/suite/dot.test.ts', 'test/suite/mermaid.test.ts'],
+    bundle: true,
+    format: 'cjs',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: 'node',
+    outdir: 'out/test',
+    external: ['vscode', 'mocha', 'glob'],
+    logLevel: 'silent',
+    plugins: [esbuildProblemMatcherPlugin],
+};
+
+async function main() {
+    const extensionCtx = await esbuild.context(extensionConfig);
+    const testCtx = await esbuild.context(testConfig);
+
+    if (watch) {
+        await extensionCtx.watch();
+        await testCtx.watch();
+    } else {
+        await extensionCtx.rebuild();
+        await testCtx.rebuild();
+        await extensionCtx.dispose();
+        await testCtx.dispose();
+    }
 }
 
 main().catch(e => {

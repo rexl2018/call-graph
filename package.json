@@ -2,7 +2,7 @@
     "name": "call-graph",
     "displayName": "Call Graph",
     "description": "call graph for vscode",
-    "version": "3.2.3",
+    "version": "3.3.3",
     "publisher": "Rex",
     "engines": {
         "vscode": "^1.65.0"
@@ -73,7 +73,7 @@
         "package": "vsce package --no-dependencies",
         "lint": "eslint src",
         "format": "prettier --write .",
-        "test": "echo \"Test is't yet implemented\" && exit 0",
+        "test": "pnpm run compile && node ./out/test/runTest.js",
         "preinstall": "npx only-allow pnpm",
         "postinstall": "simple-git-hooks"
     },
@@ -81,6 +81,7 @@
         "@eslint/js": "^9.15.0",
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.10",
+        "@types/mock-require": "^2.0.3",
         "@types/node": "20.x",
         "@types/vscode": "1.65.0",
         "@vscode/test-electron": "^2.4.1",
@@ -88,6 +89,7 @@
         "esbuild": "^0.24.0",
         "eslint": "^9.15.0",
         "glob": "^11.0.0",
+        "mock-require": "^3.0.3",
         "lint-staged": "^15.2.10",
         "mocha": "^10.8.2",
         "npm-run-all": "^4.1.5",
@@ -116,7 +118,6 @@
         "d3": "^7.8.5",
         "d3-graphviz": "^5.0.0",
         "@hpcc-js/wasm": "^1.12.0",
-        "jquery.graphviz.svg": "^1.0.0",
         "ignore": "^6.0.2"
     },
     "simple-git-hooks": {
