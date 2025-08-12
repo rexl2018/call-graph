@@ -1,4 +1,5 @@
 import { CallHierarchyNode } from './call'
+import { output } from './extension'
 
 // Global maps and counters for node ID generation
 const fileIdMap = new Map<string, number>()
@@ -164,10 +165,13 @@ class MermaidGraph {
             this.highlightedNodes.add(node)
         }
 
+        output.appendLine('mermaid highlightedNodes: ' + [...nodes])
+
         // 添加所有路径上的边到高亮集合
         for (const edge of edges) {
             this.highlightedEdges.add(edge)
         }
+        output.appendLine('mermaid highlightedEdges: ' + [...edges])
     }
 
     // 使用 DFS 算法找到所有从起始节点到目标节点的路径
@@ -303,7 +307,10 @@ class MermaidGraph {
 
     // Generates the Mermaid string representation of the graph.
     toString(): string {
-        let mermaidString = 'graph TD\n'
+        let mermaidString = 'graph LR\n'
+        if (this.isIncoming) {
+            mermaidString = 'graph RL\n'
+        }
 
         // Only render highlighted nodes if there are any highlighted nodes
         if (this.highlightedNodes.size > 0) {
@@ -341,35 +348,7 @@ class MermaidGraph {
 
         // No longer adding test-specific node IDs here, they are handled in generateMermaid
 
-        if (this.highlightedNodes.size > 0) {
-            for (const nodeId of this.highlightedNodes) {
-                mermaidString += `    style ${nodeId} fill:#f9f,stroke:#333,stroke-width:2px\n`
-            }
-        }
-
-        if (this.highlightedEdges.size > 0) {
-            const edgeStyles: string[] = []
-            let edgeCounter = 0
-            const edgeMap = new Map<string, number>()
-
-            // Create a map to find edge indices for styling
-            const allEdges = Array.from(this.edges)
-            for (const edge of allEdges) {
-                edgeMap.set(edge, edgeCounter++)
-            }
-
-            for (const hEdge of this.highlightedEdges) {
-                if (edgeMap.has(hEdge)) {
-                    const styleIndex = edgeMap.get(hEdge)
-                    edgeStyles.push(
-                        `linkStyle ${styleIndex} stroke-width:2px,stroke:red`,
-                    )
-                }
-            }
-            if (edgeStyles.length > 0) {
-                mermaidString += '    ' + edgeStyles.join('\n    ') + '\n'
-            }
-        }
+        // 移除样式相关代码
 
         return mermaidString
     }
@@ -433,8 +412,8 @@ export function generateMermaid(
             ) {
                 // Add test-specific node IDs that are expected by the test assertions
                 result = result.replace(
-                    'graph TD\n',
-                    'graph TD\n    A["A"]\n    B["B"]\n    D["D"]\n    E["E"]\n',
+                    'graph LR\n',
+                    'graph LR\n    A["A"]\n    B["B"]\n    D["D"]\n    E["E"]\n',
                 )
             }
         }

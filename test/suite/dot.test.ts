@@ -55,28 +55,19 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const inDotString = dotIncoming.toString()
-        console.log('Incoming DOT:', inDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const nodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const edges =
-            inDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('节点ID列表:', nodeIds)
-        console.log('边列表:', edges)
 
         // 获取节点ID
         const nodeAId = getNodeId(nodeA)
         const nodeBId = getNodeId(nodeB)
         const nodeCId = getNodeId(nodeC)
 
-        // 检查是否有从B到A的边
-        const hasBtoAEdge = edges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeAId}"`),
-        )
-        console.log('是否有B到A的边:', hasBtoAEdge)
+        // 使用正则表达式提取所有节点ID和边
+        const nodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
+
+        // 检查节点
 
         // 检查是否包含节点C
         const hasCNode = nodeIds.some(id => id.includes(`"${nodeCId}"`))
-        console.log('是否包含节点C:', hasCNode)
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -95,23 +86,12 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const outDotString = dotOutgoing.toString()
-        console.log('Outgoing DOT:', outDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const outNodeIds = outDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const outEdges =
-            outDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Outgoing节点ID列表:', outNodeIds)
-        console.log('Outgoing边列表:', outEdges)
 
-        // 检查是否有从A到B的边
-        const hasAtoBEdge = outEdges.some(edge =>
-            edge.includes(`"${nodeAId}" -> "${nodeBId}"`),
-        )
-        console.log('是否有A到B的边:', hasAtoBEdge)
+        // 提取DOT字符串
 
-        // 检查是否包含节点C
-        const hasOutCNode = outNodeIds.some(id => id.includes(`"${nodeCId}"`))
-        console.log('是否包含节点C:', hasOutCNode)
+        // 检查节点
+
+        // 检查节点
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -121,6 +101,85 @@ describe('generateDot', () => {
         assert.ok(
             !outDotString.includes(`"${nodeCId}"`),
             'Outgoing: Should not include C',
+        )
+    })
+
+    it('should generate DOT string for a simple 3-node graph with no clicked node', () => {
+        // A -> B -> C
+        const nodeC = createMockCallHierarchyNode('C', 'testC.ts', 3, 1)
+        const nodeB = createMockCallHierarchyNode('B', 'testB.ts', 2, 1)
+        const nodeA = createMockCallHierarchyNode('A', 'testA.ts', 1, 1)
+
+        nodeA.children.push(nodeB)
+        nodeB.children.push(nodeC)
+
+        const rootNode = nodeA
+        const clickedNodeId = null // 没有选中节点
+
+        // Test incoming (isIncoming: true)
+        // 当没有选中节点时，应该显示完整的图
+        const dotIncoming = generateDot(
+            rootNode,
+            '/tmp/incoming_no_click.dot',
+            true,
+            clickedNodeId,
+        )
+        const inDotString = dotIncoming.toString()
+
+        // 获取节点ID
+        const nodeAId = getNodeId(nodeA)
+        const nodeBId = getNodeId(nodeB)
+        const nodeCId = getNodeId(nodeC)
+
+        // 使用正则表达式提取所有节点ID
+        const nodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
+        const hasANode = nodeIds.some(id => id.includes(`"${nodeAId}"`))
+        const hasBNode = nodeIds.some(id => id.includes(`"${nodeBId}"`))
+        const hasCNode = nodeIds.some(id => id.includes(`"${nodeCId}"`))
+
+        console.log('Incoming No Click Dot String:', inDotString)
+
+        // 使用getNodeId函数获取的节点ID进行断言
+        assert.ok(hasANode, 'Incoming No Click: Should include A')
+        assert.ok(hasBNode, 'Incoming No Click: Should include B')
+        assert.ok(hasCNode, 'Incoming No Click: Should include C')
+        assert.ok(
+            inDotString.includes(`"${nodeBId}" -> "${nodeAId}"`),
+            'Incoming No Click: B -> A',
+        )
+        assert.ok(
+            inDotString.includes(`"${nodeCId}" -> "${nodeBId}"`),
+            'Incoming No Click: C -> B',
+        )
+
+        // Test outgoing (isIncoming: false)
+        // 当没有选中节点时，应该显示完整的图
+        const dotOutgoing = generateDot(
+            rootNode,
+            '/tmp/outgoing_no_click.dot',
+            false,
+            clickedNodeId,
+        )
+        const outDotString = dotOutgoing.toString()
+
+        // 提取DOT字符串
+        const hasOutANode = outDotString.includes(`"${nodeAId}"`)
+        const hasOutBNode = outDotString.includes(`"${nodeBId}"`)
+        const hasOutCNode = outDotString.includes(`"${nodeCId}"`)
+
+        console.log('Outgoing No Click Dot String:', outDotString)
+
+        // 使用getNodeId函数获取的节点ID进行断言
+        assert.ok(hasOutANode, 'Outgoing No Click: Should include A')
+        assert.ok(hasOutBNode, 'Outgoing No Click: Should include B')
+        assert.ok(hasOutCNode, 'Outgoing No Click: Should include C')
+        assert.ok(
+            outDotString.includes(`"${nodeAId}" -> "${nodeBId}"`),
+            'Outgoing No Click: A -> B',
+        )
+        assert.ok(
+            outDotString.includes(`"${nodeBId}" -> "${nodeCId}"`),
+            'Outgoing No Click: B -> C',
         )
     })
 
@@ -145,30 +204,13 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const inDotString = dotIncoming.toString()
-        console.log('Circular Incoming DOT:', inDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const circularNodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const circularEdges =
-            inDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Circular Incoming节点ID列表:', circularNodeIds)
-        console.log('Circular Incoming边列表:', circularEdges)
+
+        // 提取DOT字符串
 
         // 获取节点ID
         const nodeAId = getNodeId(nodeA)
         const nodeBId = getNodeId(nodeB)
         const nodeCId = getNodeId(nodeC)
-
-        // 检查是否有从B到A的边
-        const hasCircularBtoAEdge = circularEdges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeAId}"`),
-        )
-        console.log('是否有B到A的边:', hasCircularBtoAEdge)
-
-        // 检查是否包含节点C
-        const hasCircularCNode = circularNodeIds.some(id =>
-            id.includes(`"${nodeCId}"`),
-        )
-        console.log('是否包含节点C:', hasCircularCNode)
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -188,26 +230,8 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const outDotString = dotOutgoing.toString()
-        console.log('Circular Outgoing DOT:', outDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const circularOutNodeIds =
-            outDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const circularOutEdges =
-            outDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Circular Outgoing节点ID列表:', circularOutNodeIds)
-        console.log('Circular Outgoing边列表:', circularOutEdges)
 
-        // 检查是否有从A到B的边
-        const hasCircularAtoBEdge = circularOutEdges.some(edge =>
-            edge.includes(`"${nodeAId}" -> "${nodeBId}"`),
-        )
-        console.log('是否有A到B的边:', hasCircularAtoBEdge)
-
-        // 检查是否包含节点C
-        const hasCircularOutCNode = circularOutNodeIds.some(id =>
-            id.includes(`"${nodeCId}"`),
-        )
-        console.log('是否包含节点C:', hasCircularOutCNode)
+        // 提取DOT字符串
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -240,23 +264,12 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const inDotString = dotIncoming.toString()
-        console.log('Self-ref Incoming DOT:', inDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const selfRefNodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const selfRefEdges =
-            inDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Self-ref Incoming节点ID列表:', selfRefNodeIds)
-        console.log('Self-ref Incoming边列表:', selfRefEdges)
+
+        // 提取DOT字符串
 
         // 获取节点ID
         const nodeAId = getNodeId(nodeA)
         const nodeBId = getNodeId(nodeB)
-
-        // 检查是否有从B到A的边
-        const hasSelfRefBtoAEdge = selfRefEdges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeAId}"`),
-        )
-        console.log('是否有B到A的边:', hasSelfRefBtoAEdge)
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -273,19 +286,8 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const outDotString = dotOutgoing.toString()
-        console.log('Self-ref Outgoing DOT:', outDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const selfRefOutNodeIds = outDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const selfRefOutEdges =
-            outDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Self-ref Outgoing节点ID列表:', selfRefOutNodeIds)
-        console.log('Self-ref Outgoing边列表:', selfRefOutEdges)
 
-        // 检查是否有从A到B的边
-        const hasSelfRefAtoBEdge = selfRefOutEdges.some(edge =>
-            edge.includes(`"${nodeAId}" -> "${nodeBId}"`),
-        )
-        console.log('是否有A到B的边:', hasSelfRefAtoBEdge)
+        // 提取DOT字符串
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -324,13 +326,9 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const inDotString = dotIncoming.toString()
-        console.log('Complex Incoming DOT:', inDotString)
-        // 使用正则表达式提取所有节点ID和边
+
+        // 使用正则表达式提取所有节点ID
         const complexNodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const complexEdges =
-            inDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Complex Incoming节点ID列表:', complexNodeIds)
-        console.log('Complex Incoming边列表:', complexEdges)
 
         // 获取节点ID
         const nodeAId = getNodeId(nodeA)
@@ -339,24 +337,6 @@ describe('generateDot', () => {
         const nodeDId = getNodeId(nodeD)
         const nodeEId = getNodeId(nodeE)
         const nodeFId = getNodeId(nodeF)
-
-        // 检查是否包含特定节点
-        const hasBNode = complexNodeIds.some(id => id.includes(`"${nodeBId}"`))
-        const hasDNode = complexNodeIds.some(id => id.includes(`"${nodeDId}"`))
-        const hasENode = complexNodeIds.some(id => id.includes(`"${nodeEId}"`))
-        console.log('是否包含节点B:', hasBNode)
-        console.log('是否包含节点D:', hasDNode)
-        console.log('是否包含节点E:', hasENode)
-
-        // 检查是否有从B到E的边和从D到E的边
-        const hasBtoEEdge = complexEdges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeEId}"`),
-        )
-        const hasDtoEEdge = complexEdges.some(edge =>
-            edge.includes(`"${nodeDId}" -> "${nodeEId}"`),
-        )
-        console.log('是否有B到E的边:', hasBtoEEdge)
-        console.log('是否有D到E的边:', hasDtoEEdge)
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -382,7 +362,6 @@ describe('generateDot', () => {
         )
         // 节点F不应该被包含
         const hasFNode = complexNodeIds.some(id => id.includes(`"${nodeFId}"`))
-        console.log('是否包含节点F:', hasFNode)
         assert.ok(hasFNode === false, 'Complex Incoming: Should not include F')
 
         // Test outgoing (isIncoming: false)
@@ -393,13 +372,6 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const outDotString = dotOutgoing.toString()
-        console.log('Complex Outgoing DOT:', outDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const complexOutNodeIds = outDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const complexOutEdges =
-            outDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Complex Outgoing节点ID列表:', complexOutNodeIds)
-        console.log('Complex Outgoing边列表:', complexOutEdges)
 
         // 根据实际的边关系修改断言
         assert.ok(
@@ -444,37 +416,14 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const inDotString = dotIncoming.toString()
-        console.log('Diamond Incoming DOT:', inDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const diamondNodeIds = inDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const diamondEdges =
-            inDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Diamond Incoming节点ID列表:', diamondNodeIds)
-        console.log('Diamond Incoming边列表:', diamondEdges)
+
+        // 提取DOT字符串
 
         // 获取节点ID
         const nodeAId = getNodeId(nodeA)
         const nodeBId = getNodeId(nodeB)
         const nodeCId = getNodeId(nodeC)
         const nodeDId = getNodeId(nodeD)
-
-        // 检查是否包含特定节点
-        const hasBNode = diamondNodeIds.some(id => id.includes(`"${nodeBId}"`))
-        const hasCNode = diamondNodeIds.some(id => id.includes(`"${nodeCId}"`))
-        const hasDNode = diamondNodeIds.some(id => id.includes(`"${nodeDId}"`))
-        console.log('是否包含节点B:', hasBNode)
-        console.log('是否包含节点C:', hasCNode)
-        console.log('是否包含节点D:', hasDNode)
-
-        // 检查是否有从B到D的边和从C到D的边
-        const hasBtoDEdge = diamondEdges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeDId}"`),
-        )
-        const hasCtoDEdge = diamondEdges.some(edge =>
-            edge.includes(`"${nodeCId}" -> "${nodeDId}"`),
-        )
-        console.log('是否有B到D的边:', hasBtoDEdge)
-        console.log('是否有C到D的边:', hasCtoDEdge)
 
         // 使用getNodeId函数获取的节点ID进行断言
         assert.ok(
@@ -514,23 +463,8 @@ describe('generateDot', () => {
             clickedNodeId,
         )
         const outDotString = dotOutgoing.toString()
-        console.log('Diamond Outgoing DOT:', outDotString)
-        // 使用正则表达式提取所有节点ID和边
-        const diamondOutNodeIds = outDotString.match(/"\d+_\d+_\d+_\d+"/g) || []
-        const diamondOutEdges =
-            outDotString.match(/"\d+_\d+_\d+_\d+" -> "\d+_\d+_\d+_\d+"/g) || []
-        console.log('Diamond Outgoing节点ID列表:', diamondOutNodeIds)
-        console.log('Diamond Outgoing边列表:', diamondOutEdges)
 
-        // 检查是否有从B到D的边和从C到D的边
-        const hasOutBtoDEdge = diamondOutEdges.some(edge =>
-            edge.includes(`"${nodeBId}" -> "${nodeDId}"`),
-        )
-        const hasOutCtoDEdge = diamondOutEdges.some(edge =>
-            edge.includes(`"${nodeCId}" -> "${nodeDId}"`),
-        )
-        console.log('是否有B到D的边:', hasOutBtoDEdge)
-        console.log('是否有C到D的边:', hasOutCtoDEdge)
+        // 提取DOT字符串
 
         // 使用getNodeId函数获取的节点ID进行断言
         // 根据实际的边关系修改断言

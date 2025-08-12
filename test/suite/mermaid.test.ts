@@ -74,6 +74,42 @@ describe('Mermaid Generation Test Suite', () => {
         )
     })
 
+    it('Simple-2 four-node graph', () => {
+        const nodeA = createMockCallHierarchyNode('B', '/b.ts', 0, 0)
+        const nodeB = createMockCallHierarchyNode('B', '/b.ts', 1, 1)
+        const nodeC = createMockCallHierarchyNode('B', '/b.ts', 2, 2)
+        const nodeD = createMockCallHierarchyNode('B', '/b.ts', 3, 3)
+        nodeA.children.push(nodeB)
+        nodeB.children.push(nodeC)
+        nodeC.children.push(nodeD)
+        nodeB.children.push(nodeD)
+
+        const idA = getNodeId(nodeA)
+        const idB = getNodeId(nodeB)
+        const idC = getNodeId(nodeC)
+        const idD = getNodeId(nodeD)
+
+        // Outgoing to C
+        let mermaid = generateMermaid(nodeA, false, idC)
+        console.log('Simple-2 Outgoing mermaid', mermaid)
+        assert.ok(
+            !mermaid.includes(idD),
+            'Outgoing Simple: D should not be present',
+        )
+        assert.ok(mermaid.includes(`${idA} --> ${idB}`), 'Outgoing: A --> B')
+        assert.ok(mermaid.includes(`${idB} --> ${idC}`), 'Outgoing: B --> C')
+
+        // Incoming from C
+        mermaid = generateMermaid(nodeA, true, idC)
+        console.log('Simple-2 Incoming mermaid', mermaid)
+        assert.ok(
+            !mermaid.includes(idD),
+            'Outgoing Simple: D should not be present',
+        )
+        assert.ok(mermaid.includes(`${idB} --> ${idA}`), 'Incoming: B --> A')
+        assert.ok(mermaid.includes(`${idC} --> ${idB}`), 'Incoming: C --> B')
+    })
+
     it('Graph with a cycle', () => {
         const nodeA = createMockCallHierarchyNode('A', '/a.ts', 0, 0)
         const nodeB = createMockCallHierarchyNode('B', '/b.ts', 1, 1)

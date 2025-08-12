@@ -314,9 +314,24 @@ class Graph {
         const nodesToRender = isHighlighting
             ? this._highlightedNodes
             : new Set(this._nodes.keys())
-        const edgesToRender = isHighlighting
-            ? this._highlightedEdges
-            : this._edges
+
+        // 处理边的方向
+        let edgesToRender: Set<string>
+        if (isHighlighting) {
+            edgesToRender = this._highlightedEdges
+        } else if (this._isIncoming) {
+            // 在incoming模式下，如果没有高亮节点，需要反转所有边的方向
+            edgesToRender = new Set<string>()
+            for (const edgeStr of this._edges) {
+                const parts = edgeStr.split(' -> ')
+                const u = parts[0]
+                const v = parts[1]
+                edgesToRender.add(`${v} -> ${u}`)
+            }
+        } else {
+            edgesToRender = this._edges
+        }
+
         // When highlighting, we only want to show subgraphs that contain highlighted nodes.
         const subgraphsToRender = isHighlighting
             ? this._highlightedSubgraphs
