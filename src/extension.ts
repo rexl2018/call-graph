@@ -8,6 +8,7 @@ import { generateDot } from './dot'
 import { generateMermaid } from './mermaid'
 import * as path from 'path'
 import * as fs from 'fs'
+import * as os from 'os'
 import ignore from 'ignore'
 
 export const output = vscode.window.createOutputChannel('CallGraph')
@@ -176,7 +177,11 @@ const generateGraph = (
                 .get<string>('call-graph.ignoreFile')
                 ?.replace('${workspace}', workspace.fsPath) ?? null
 
-        if (ignoreFile && !fs.existsSync(ignoreFile)) ignoreFile = null
+        // 如果没有配置或配置的文件不存在，尝试使用~/.callgraphignore
+        if (!ignoreFile || (ignoreFile && !fs.existsSync(ignoreFile))) {
+            const homeIgnoreFile = path.join(os.homedir(), '.callgraphignore')
+            ignoreFile = fs.existsSync(homeIgnoreFile) ? homeIgnoreFile : null
+        }
         const graph = await callNodeFunction(entry[0], item => {
             if (ignoreFile === null) return false
             // working in the current workspace
